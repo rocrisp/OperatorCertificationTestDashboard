@@ -575,6 +575,13 @@
                             style="padding: 0.4rem 0.75rem; font-size: 0.8rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">
                             Download Selected
                         </button>
+                        <select id="reports-limit" onchange="fetchPastReports()" 
+                            style="padding: 0.3rem 0.5rem; font-size: 0.8rem; background: #374151; color: #eee; border: 1px solid #4b5563; border-radius: 4px; cursor: pointer;">
+                            <option value="5">Last 5</option>
+                            <option value="10" selected>Last 10</option>
+                            <option value="20">Last 20</option>
+                            <option value="30">Last 30</option>
+                        </select>
                     </div>
                 </div>
                 <div id="past-reports-container" style="max-height: 250px; overflow-y: auto;">
@@ -1026,11 +1033,16 @@
         }
 
         async function fetchPastReports() {
+            const tbody = document.getElementById('past-reports-list');
+            const limitSelect = document.getElementById('reports-limit');
+            const limit = limitSelect ? limitSelect.value : 10;
+            
+            // Show loading state
+            tbody.innerHTML = '<tr><td colspan="6" style="padding: 1rem; color: #888;">Loading reports...</td></tr>';
+            
             try {
-                const res = await fetch('/api/reports');
+                const res = await fetch(`/api/reports?limit=${limit}`);
                 const data = await res.json();
-
-                const tbody = document.getElementById('past-reports-list');
 
                 if (data.reports && data.reports.length > 0) {
                     tbody.innerHTML = data.reports.map((report, index) => {

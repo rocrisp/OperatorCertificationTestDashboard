@@ -411,7 +411,11 @@ def get_completed_tests():
 @app.route('/api/reports')
 def list_reports():
     """List available report directories with summary stats"""
-    reports_raw = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -20')
+    # Default to 10 reports, can be overridden with ?limit=N parameter
+    limit = request.args.get('limit', 10, type=int)
+    limit = min(max(limit, 1), 50)  # Clamp between 1 and 50
+    
+    reports_raw = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -{limit}')
     report_names = [os.path.basename(r) for r in reports_raw.strip().split('\n') if r]
     
     # Build report list with summary stats
