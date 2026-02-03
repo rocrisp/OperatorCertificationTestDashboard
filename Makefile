@@ -2,7 +2,7 @@
 # Uses OpenShift CLI (oc) for building and deploying
 
 # Configuration - can be overridden via environment or command line
-NAMESPACE ?= operator-dashboard
+NAMESPACE ?= operator-certification-test-dashboard
 APP_NAME ?= operator-test-dashboard
 IMAGE_NAME ?= $(APP_NAME)
 IMAGE_TAG ?= latest
@@ -57,33 +57,31 @@ create-imagestream: create-namespace ## Create ImageStream for the application
 .PHONY: create-buildconfig
 create-buildconfig: create-imagestream ## Create BuildConfig using Dockerfile
 	@echo "Creating BuildConfig for $(APP_NAME)..."
-	@oc apply -f - <<EOF
-apiVersion: build.openshift.io/v1
-kind: BuildConfig
-metadata:
-  name: $(APP_NAME)
-  namespace: $(NAMESPACE)
-  labels:
-    app: $(APP_NAME)
-spec:
-  source:
-    type: Binary
-  strategy:
-    type: Docker
-    dockerStrategy:
-      dockerfilePath: Dockerfile
-  output:
-    to:
-      kind: ImageStreamTag
-      name: $(IMAGE_NAME):$(IMAGE_TAG)
-  resources:
-    limits:
-      cpu: "1"
-      memory: 1Gi
-    requests:
-      cpu: 500m
-      memory: 512Mi
-EOF
+	@echo 'apiVersion: build.openshift.io/v1\n\
+kind: BuildConfig\n\
+metadata:\n\
+  name: $(APP_NAME)\n\
+  namespace: $(NAMESPACE)\n\
+  labels:\n\
+    app: $(APP_NAME)\n\
+spec:\n\
+  source:\n\
+    type: Binary\n\
+  strategy:\n\
+    type: Docker\n\
+    dockerStrategy:\n\
+      dockerfilePath: Dockerfile\n\
+  output:\n\
+    to:\n\
+      kind: ImageStreamTag\n\
+      name: $(IMAGE_NAME):$(IMAGE_TAG)\n\
+  resources:\n\
+    limits:\n\
+      cpu: "1"\n\
+      memory: 1Gi\n\
+    requests:\n\
+      cpu: 500m\n\
+      memory: 512Mi' | oc apply -f -
 
 .PHONY: build
 build: create-buildconfig ## Build the application using OpenShift (binary build)

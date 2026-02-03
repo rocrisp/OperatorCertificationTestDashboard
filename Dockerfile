@@ -22,16 +22,20 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY scripts/ ./scripts/
 
-# Create logs directory
-RUN mkdir -p /app/logs && chown -R dashboard:dashboard /app
+# Create logs directory with group write permissions for OpenShift
+# OpenShift runs containers with random UIDs but GID 0 (root group)
+RUN mkdir -p /app/logs && \
+    chown -R 1000:0 /app && \
+    chmod -R g=u /app
 
-# Create .ssh directory for SSH keys
+# Create .ssh directory for SSH keys (writable by root group)
 RUN mkdir -p /home/dashboard/.ssh && \
-    chown -R dashboard:dashboard /home/dashboard/.ssh && \
-    chmod 700 /home/dashboard/.ssh
+    chown -R 1000:0 /home/dashboard/.ssh && \
+    chmod 700 /home/dashboard/.ssh && \
+    chmod g=u /home/dashboard/.ssh
 
-# Switch to non-root user
-USER dashboard
+# Switch to non-root user (OpenShift will override with random UID)
+USER 1000
 
 # Environment variables with defaults
 ENV REMOTE_HOST=rdu2 \
