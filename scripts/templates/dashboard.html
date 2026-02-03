@@ -8,7 +8,7 @@
     <style>
         /* ========== THEME VARIABLES ========== */
         :root {
-            /* Default Theme (Original) */
+            /* Nebula Theme (Default) - Space purple gradient */
             --bg-primary: #1a1a2e;
             --bg-secondary: #16213e;
             --bg-tertiary: #374151;
@@ -30,8 +30,8 @@
             --input-border: #4b5563;
         }
 
-        /* Theme: Apple - Clean, minimalist, elegant */
-        .theme-apple {
+        /* Frost Theme - Clean, minimalist, elegant whites */
+        .theme-frost {
             --bg-primary: #f5f5f7;
             --bg-secondary: #ffffff;
             --bg-tertiary: #e8e8ed;
@@ -53,8 +53,31 @@
             --input-border: #d2d2d7;
         }
 
-        /* Theme: CNN - Bold, news-style, red accents */
-        .theme-cnn {
+        /* Shadowman Theme - Red Hat inspired */
+        .theme-shadowman {
+            --bg-primary: #151515;
+            --bg-secondary: #1f1f1f;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #a3a3a3;
+            --text-muted: #6a6a6a;
+            --accent-primary: #ee0000;
+            --accent-secondary: #cc0000;
+            --accent-gradient: linear-gradient(135deg, #ee0000 0%, #a30000 100%);
+            --success: #3e8635;
+            --warning: #f0ab00;
+            --danger: #c9190b;
+            --border-color: #3c3c3c;
+            --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            --header-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            --btn-bg: #ee0000;
+            --btn-text: #ffffff;
+            --input-bg: #1f1f1f;
+            --input-border: #3c3c3c;
+        }
+
+        /* Cardinal Theme - Bold red, high contrast, news-style */
+        .theme-cardinal {
             --bg-primary: #f9f9f9;
             --bg-secondary: #ffffff;
             --bg-tertiary: #e5e5e5;
@@ -76,8 +99,8 @@
             --input-border: #cccccc;
         }
 
-        /* Theme: GitHub - Developer dark mode */
-        .theme-github {
+        /* Midnight Theme - Developer dark mode */
+        .theme-midnight {
             --bg-primary: #0d1117;
             --bg-secondary: #161b22;
             --bg-tertiary: #21262d;
@@ -99,8 +122,8 @@
             --input-border: #30363d;
         }
 
-        /* Theme: Notion - Warm, readable, productivity */
-        .theme-notion {
+        /* Parchment Theme - Warm, readable, productivity */
+        .theme-parchment {
             --bg-primary: #ffffff;
             --bg-secondary: #fbfbfa;
             --bg-tertiary: #f1f1ef;
@@ -122,8 +145,8 @@
             --input-border: #e9e9e7;
         }
 
-        /* Theme: Stripe - Modern, gradient, professional */
-        .theme-stripe {
+        /* Ocean Theme - Modern gradients, deep blue */
+        .theme-ocean {
             --bg-primary: #0a2540;
             --bg-secondary: #0f3460;
             --bg-tertiary: #1a4a7a;
@@ -369,16 +392,19 @@
         }
 
         .output {
-            background: #0f0f1a;
+            /* Always use white text on black - override all themes for readability */
+            background: #0a0a0a !important;
+            color: #f0f0f0 !important;
             border-radius: 8px;
             padding: 1rem;
-            font-family: 'Monaco', 'Menlo', monospace;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
             font-size: 0.85rem;
             line-height: 1.5;
             max-height: 400px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all;
+            border: 1px solid #333;
         }
 
         .timestamp {
@@ -634,12 +660,13 @@
                     <label for="theme-select" style="font-size: 0.85rem; opacity: 0.9;">Theme:</label>
                     <select id="theme-select" onchange="changeTheme(this.value)" 
                         style="padding: 0.4rem 0.6rem; font-size: 0.85rem; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; cursor: pointer;">
-                        <option value="default">Default</option>
-                        <option value="apple">Apple</option>
-                        <option value="cnn">CNN</option>
-                        <option value="github">GitHub</option>
-                        <option value="notion">Notion</option>
-                        <option value="stripe">Stripe</option>
+                        <option value="nebula">Nebula</option>
+                        <option value="frost">Frost</option>
+                        <option value="shadowman">Shadowman</option>
+                        <option value="cardinal">Cardinal</option>
+                        <option value="midnight">Midnight</option>
+                        <option value="parchment">Parchment</option>
+                        <option value="ocean">Ocean</option>
                     </select>
                 </div>
                 <!-- Timer Section -->
@@ -1436,10 +1463,10 @@
         function changeTheme(themeName) {
             const body = document.body;
             // Remove all theme classes
-            body.classList.remove('theme-apple', 'theme-cnn', 'theme-github', 'theme-notion', 'theme-stripe');
+            body.classList.remove('theme-frost', 'theme-shadowman', 'theme-cardinal', 'theme-midnight', 'theme-parchment', 'theme-ocean');
             
-            // Add new theme class (if not default)
-            if (themeName !== 'default') {
+            // Add new theme class (nebula is default/root, no class needed)
+            if (themeName !== 'nebula') {
                 body.classList.add(`theme-${themeName}`);
             }
             
@@ -1448,7 +1475,7 @@
         }
 
         function loadSavedTheme() {
-            const savedTheme = localStorage.getItem('dashboard-theme') || 'default';
+            const savedTheme = localStorage.getItem('dashboard-theme') || 'nebula';
             const themeSelect = document.getElementById('theme-select');
             if (themeSelect) {
                 themeSelect.value = savedTheme;
