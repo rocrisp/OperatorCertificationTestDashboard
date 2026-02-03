@@ -71,7 +71,12 @@ def ssh_command(cmd, log_cmd=False, timeout=30):
         ssh_cmd = ['ssh']
         if SSH_KEY_PATH:
             ssh_cmd.extend(['-i', SSH_KEY_PATH])
-        ssh_cmd.extend(['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null'])
+        # Suppress known_hosts warnings with LogLevel=ERROR
+        ssh_cmd.extend([
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'LogLevel=ERROR'
+        ])
         
         # Add user@host or just host
         if SSH_USER:
@@ -87,8 +92,9 @@ def ssh_command(cmd, log_cmd=False, timeout=30):
             text=True,
             timeout=timeout
         )
-        if result.returncode != 0 and result.stderr:
-            logger.warning(f"SSH command returned non-zero: {result.stderr[:200]}")
+        # Only log real errors, not SSH warnings about known hosts
+        if result.returncode != 0 and result.stderr and 'Warning:' not in result.stderr:
+            logger.warning(f"SSH command failed (exit {result.returncode}): {result.stderr[:200]}")
         return result.stdout
     except subprocess.TimeoutExpired:
         logger.error(f"SSH command timed out after {timeout}s: {cmd[:100]}...")
