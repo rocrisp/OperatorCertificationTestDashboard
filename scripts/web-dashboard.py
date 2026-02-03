@@ -410,9 +410,38 @@ def get_completed_tests():
 
 @app.route('/api/reports')
 def list_reports():
-    """List available report directories"""
+    """List available report directories with summary stats"""
     reports_raw = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -20')
-    reports = [os.path.basename(r) for r in reports_raw.strip().split('\n') if r]
+    report_names = [os.path.basename(r) for r in reports_raw.strip().split('\n') if r]
+    
+    # Build report list with summary stats
+    reports = []
+    for report_name in report_names:
+        report_dir = f"{REPORT_DIR}/{report_name}"
+        
+        # Get total operators from operator-list.txt (filter empty lines)
+        total_raw = ssh_command(f'grep -c "." "{report_dir}/operator-list.txt" 2>/dev/null || echo 0')
+        total = safe_int(total_raw)
+        
+        # Get installed count from log
+        log_file = ssh_command(f'ls -t "{report_dir}"/output_*.log 2>/dev/null | head -1').strip()
+        installed = 0
+        failed = 0
+        
+        if log_file:
+            installed_raw = ssh_command(f'grep -c "operator .* installed" "{log_file}" 2>/dev/null || echo 0')
+            installed = safe_int(installed_raw)
+            
+            failed_raw = ssh_command(f'grep -c "Operator failed to install" "{log_file}" 2>/dev/null || echo 0')
+            failed = safe_int(failed_raw)
+        
+        reports.append({
+            'name': report_name,
+            'total': total,
+            'installed': installed,
+            'failed': failed
+        })
+    
     return jsonify({'reports': reports})
 
 @app.route('/api/report-summary')
