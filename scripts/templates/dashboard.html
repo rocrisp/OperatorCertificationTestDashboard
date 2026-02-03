@@ -358,7 +358,7 @@
                 <button class="modal-close" onclick="closeReportModal()">&times;</button>
             </div>
             <div id="modal-date" style="color: #888; margin-bottom: 1rem;"></div>
-            
+
             <!-- Stats Summary -->
             <div class="modal-stats" style="grid-template-columns: repeat(4, 1fr);">
                 <div class="modal-stat">
@@ -378,40 +378,69 @@
                     <div class="modal-stat-label">Other</div>
                 </div>
             </div>
-            
+
             <!-- Operator Lists -->
             <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
                 <!-- Installed Section -->
                 <div id="modal-installed-section" style="margin-bottom: 1rem;">
-                    <h3 style="color: #10b981; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="toggleSection('installed')">
+                    <h3 style="color: #10b981; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;"
+                        onclick="toggleSection('installed')">
                         ▼ Installed Successfully (<span id="modal-installed-count">0</span>)
                     </h3>
                     <div id="modal-installed-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
                 </div>
-                
+
                 <!-- Failed Section -->
                 <div id="modal-failed-section" style="margin-bottom: 1rem; display: none;">
-                    <h3 style="color: #ef4444; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="toggleSection('failed')">
+                    <h3 style="color: #ef4444; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;"
+                        onclick="toggleSection('failed')">
                         ▼ Failed to Install (<span id="modal-failed-count">0</span>)
                     </h3>
                     <div id="modal-failed-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
                 </div>
-                
+
                 <!-- Other Section -->
                 <div id="modal-other-section" style="margin-bottom: 1rem; display: none;">
-                    <h3 style="color: #f59e0b; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="toggleSection('other')">
+                    <h3 style="color: #f59e0b; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;"
+                        onclick="toggleSection('other')">
                         ▼ Other/In Progress (<span id="modal-other-count">0</span>)
                     </h3>
                     <div id="modal-other-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
                 </div>
             </div>
-            
+
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <a id="modal-view-link" href="#" target="_blank" class="btn btn-primary" style="text-decoration: none; text-align: center; flex: 1;">
+                <a id="modal-view-link" href="#" target="_blank" class="btn btn-primary"
+                    style="text-decoration: none; text-align: center; flex: 1;">
                     Open Report
                 </a>
                 <button id="modal-csv-btn" class="btn btn-primary" style="flex: 1;" onclick="">
                     Download CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Configuration Modal -->
+    <div id="test-config-modal" class="modal-overlay" onclick="closeTestConfigModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Configure Test Run</h2>
+                <button class="modal-close" onclick="closeTestConfigModal()">&times;</button>
+            </div>
+            <p style="color: #888; margin-bottom: 1rem;">Select operators to test. Use + suffix for persistent
+                operators.</p>
+
+            <div id="test-config-catalogs" style="max-height: 500px; overflow-y: auto;">
+                <!-- Catalogs will be populated by JavaScript -->
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button class="btn btn-primary" onclick="runConfiguredTest()" style="flex: 1;">
+                    Start Test
+                </button>
+                <button class="btn btn-warning" onclick="closeTestConfigModal()" style="flex: 1;">
+                    Cancel
                 </button>
             </div>
         </div>
@@ -470,7 +499,7 @@
             <div class="card">
                 <h2>Actions</h2>
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="btn-start" onclick="startTest()">Start Test</button>
+                    <button class="btn btn-primary" id="btn-start" onclick="openTestConfigModal()">Start Test</button>
                     <button class="btn btn-danger" id="btn-stop" onclick="stopTest()">Stop Test</button>
                     <button class="btn btn-warning" id="btn-cleanup" onclick="cleanupCluster()">Cleanup</button>
                 </div>
@@ -479,7 +508,8 @@
             <div class="card results-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h2 style="margin-bottom: 0;">Latest Results</h2>
-                    <button class="btn btn-primary" onclick="downloadCSV()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                    <button class="btn btn-primary" onclick="downloadCSV()"
+                        style="padding: 0.5rem 1rem; font-size: 0.85rem;">
                         Download CSV
                     </button>
                 </div>
@@ -517,7 +547,9 @@
                             </tr>
                         </thead>
                         <tbody id="past-reports-list">
-                            <tr><td colspan="4" style="padding: 1rem; color: #888;">Loading...</td></tr>
+                            <tr>
+                                <td colspan="4" style="padding: 1rem; color: #888;">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -534,43 +566,43 @@
         // Timer variables
         let testStartTime = null;
         let timerInterval = null;
-        
+
         function formatElapsedTime(startTime) {
             const now = new Date();
             const start = new Date(startTime);
             const diffMs = now - start;
-            
+
             const hours = Math.floor(diffMs / (1000 * 60 * 60));
             const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-            
+
             return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
-        
+
         function updateTimer() {
             if (testStartTime) {
                 document.getElementById('elapsed-time').textContent = formatElapsedTime(testStartTime);
             }
         }
-        
+
         function startTimer(startTimeStr) {
             // Parse start time from ISO format "2026-02-03T11:43:57"
             testStartTime = startTimeStr;
-            
+
             // Display in readable format
             const startDate = new Date(startTimeStr);
             const displayTime = startDate.toLocaleString();
             document.getElementById('start-time').textContent = displayTime;
             document.getElementById('timer-section').style.display = 'block';
-            
+
             // Clear existing interval if any
             if (timerInterval) clearInterval(timerInterval);
-            
+
             // Update immediately and then every second
             updateTimer();
             timerInterval = setInterval(updateTimer, 1000);
         }
-        
+
         function stopTimer() {
             document.getElementById('timer-section').style.display = 'none';
             if (timerInterval) {
@@ -579,7 +611,7 @@
             }
             testStartTime = null;
         }
-        
+
         function showAlert(message, type) {
             const alerts = document.getElementById('alerts');
             const alert = document.createElement('div');
@@ -673,12 +705,185 @@
         async function startTest() {
             if (!confirm('Start operator certification test?')) return;
 
+            // This function is no longer used - replaced by openTestConfigModal
+            showAlert('Use the configuration modal to start tests', 'error');
+        }
+
+        let testConfig = null;
+
+        async function openTestConfigModal() {
+            const modal = document.getElementById('test-config-modal');
+            const container = document.getElementById('test-config-catalogs');
+
+            container.innerHTML = '<p style="color: #888;">Loading configuration...</p>';
+            modal.style.display = 'flex';
+
             try {
-                const res = await fetch('/api/test/start', { method: 'POST' });
+                const res = await fetch('/api/test/config');
+                testConfig = await res.json();
+
+                container.innerHTML = testConfig.catalogs.map((catalog, idx) => `
+                    <div id="catalog-section-${idx}" style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" id="catalog-enabled-${idx}" checked onchange="toggleCatalog(${idx})" 
+                                    style="margin-right: 0.75rem; width: 18px; height: 18px;">
+                                <h3 style="color: #667eea; font-size: 1rem; margin: 0;">${catalog.name}</h3>
+                            </label>
+                            <div>
+                                <button onclick="selectAllOperators(${idx})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #374151; color: #eee; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.25rem;">
+                                    Select All
+                                </button>
+                                <button onclick="deselectAllOperators(${idx})" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #374151; color: #eee; border: none; border-radius: 4px; cursor: pointer;">
+                                    Deselect All
+                                </button>
+                            </div>
+                        </div>
+                        <p style="color: #888; font-size: 0.75rem; margin-bottom: 0.5rem;">${catalog.index}</p>
+                        
+                        <div id="catalog-content-${idx}">
+                            <!-- Add operator input -->
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <input type="text" id="add-operator-${idx}" placeholder="Enter operator name (e.g., my-operator or my-operator+)" 
+                                    style="flex: 1; padding: 0.5rem; background: #1a1a2e; border: 1px solid #374151; border-radius: 4px; color: #eee; font-size: 0.85rem;"
+                                    onkeypress="if(event.key==='Enter') addOperator(${idx})">
+                                <button onclick="addOperator(${idx})" 
+                                    style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    Add
+                                </button>
+                            </div>
+                            
+                            <div id="catalog-${idx}-operators" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                ${catalog.operators.map((op, opIdx) => `
+                                    <label style="display: flex; align-items: center; padding: 0.25rem 0.5rem; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                        <input type="checkbox" checked data-catalog="${idx}" data-operator="${op}" style="margin-right: 0.5rem;">
+                                        <span style="color: #10b981;">${op}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                console.error('Failed to load test config:', e);
+                container.innerHTML = '<p style="color: #ef4444;">Failed to load configuration</p>';
+            }
+        }
+
+        function toggleCatalog(catalogIdx) {
+            const enabled = document.getElementById(`catalog-enabled-${catalogIdx}`).checked;
+            const content = document.getElementById(`catalog-content-${catalogIdx}`);
+            const section = document.getElementById(`catalog-section-${catalogIdx}`);
+
+            if (enabled) {
+                content.style.display = 'block';
+                section.style.opacity = '1';
+            } else {
+                content.style.display = 'none';
+                section.style.opacity = '0.5';
+            }
+        }
+
+        function selectAllOperators(catalogIdx) {
+            document.querySelectorAll(`#catalog-${catalogIdx}-operators input[type="checkbox"]`).forEach(cb => cb.checked = true);
+        }
+
+        function deselectAllOperators(catalogIdx) {
+            document.querySelectorAll(`#catalog-${catalogIdx}-operators input[type="checkbox"]`).forEach(cb => cb.checked = false);
+        }
+
+        function addOperator(catalogIdx) {
+            const input = document.getElementById(`add-operator-${catalogIdx}`);
+            const operatorName = input.value.trim();
+
+            if (!operatorName) {
+                showAlert('Please enter an operator name', 'error');
+                return;
+            }
+
+            // Check if operator already exists
+            const existing = document.querySelector(`#catalog-${catalogIdx}-operators input[data-operator="${operatorName}"]`);
+            if (existing) {
+                showAlert('Operator already in list', 'error');
+                existing.checked = true;
+                input.value = '';
+                return;
+            }
+
+            // Add new operator checkbox
+            const container = document.getElementById(`catalog-${catalogIdx}-operators`);
+            const newLabel = document.createElement('label');
+            newLabel.style.cssText = 'display: flex; align-items: center; padding: 0.25rem 0.5rem; background: rgba(102, 126, 234, 0.2); border: 1px solid #667eea; border-radius: 4px; cursor: pointer; font-size: 0.8rem;';
+            newLabel.innerHTML = `
+                <input type="checkbox" checked data-catalog="${catalogIdx}" data-operator="${operatorName}" style="margin-right: 0.5rem;">
+                <span style="color: #667eea;">${operatorName}</span>
+                <button onclick="removeOperator(this, ${catalogIdx}, '${operatorName}')" style="margin-left: 0.5rem; background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.9rem;">&times;</button>
+            `;
+            container.appendChild(newLabel);
+
+            input.value = '';
+            showAlert(`Added ${operatorName}`, 'success');
+        }
+
+        function removeOperator(btn, catalogIdx, operatorName) {
+            btn.closest('label').remove();
+            showAlert(`Removed ${operatorName}`, 'success');
+        }
+
+        function closeTestConfigModal(event) {
+            if (!event || event.target.classList.contains('modal-overlay')) {
+                document.getElementById('test-config-modal').style.display = 'none';
+            }
+        }
+
+        async function runConfiguredTest() {
+            if (!testConfig) {
+                showAlert('Configuration not loaded', 'error');
+                return;
+            }
+
+            // Build the configuration from enabled catalogs with checked operators
+            const catalogs = testConfig.catalogs.map((catalog, idx) => {
+                // Check if catalog is enabled
+                const catalogEnabled = document.getElementById(`catalog-enabled-${idx}`).checked;
+                if (!catalogEnabled) {
+                    return null;
+                }
+
+                const checkedOperators = [];
+                document.querySelectorAll(`#catalog-${idx}-operators input[type="checkbox"]:checked`).forEach(cb => {
+                    checkedOperators.push(cb.dataset.operator);
+                });
+                return {
+                    name: catalog.name,
+                    index: catalog.index,
+                    operators: checkedOperators
+                };
+            }).filter(c => c && c.operators.length > 0);
+
+            if (catalogs.length === 0) {
+                showAlert('No operators selected', 'error');
+                return;
+            }
+
+            const totalOps = catalogs.reduce((sum, c) => sum + c.operators.length, 0);
+            if (!confirm(`Start test with ${totalOps} operators from ${catalogs.length} catalog(s)?`)) {
+                return;
+            }
+
+            closeTestConfigModal();
+
+            try {
+                const res = await fetch('/api/test/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ catalogs })
+                });
                 const data = await res.json();
 
                 if (res.ok) {
-                    showAlert('Test started successfully', 'success');
+                    showAlert(`Test started with ${totalOps} operators`, 'success');
                     fetchStatus();
                 } else {
                     showAlert(data.error || 'Failed to start test', 'error');
@@ -729,9 +934,9 @@
             try {
                 const res = await fetch('/api/completed-tests');
                 const data = await res.json();
-                
+
                 const container = document.getElementById('completed-tests-list');
-                
+
                 if (data.tests && data.tests.length > 0) {
                     container.innerHTML = data.tests.map(test => {
                         let bgColor, textColor;
@@ -766,9 +971,9 @@
             try {
                 const res = await fetch('/api/reports');
                 const data = await res.json();
-                
+
                 const tbody = document.getElementById('past-reports-list');
-                
+
                 if (data.reports && data.reports.length > 0) {
                     tbody.innerHTML = data.reports.map((report, index) => {
                         // Parse report name: report_2026-02-03_11-43-57_EST
@@ -776,10 +981,10 @@
                         const date = parts[0] || '';
                         const time = parts[1] ? parts[1].replace(/-/g, ':') : '';
                         const tz = parts[2] || '';
-                        
+
                         const isLatest = index === 0;
                         const rowStyle = isLatest ? 'background: rgba(102, 126, 234, 0.1);' : '';
-                        
+
                         return `<tr style="border-bottom: 1px solid #374151; ${rowStyle}">
                             <td style="padding: 0.5rem;">
                                 ${isLatest ? '<span style="color: #667eea; font-weight: 500;">● </span>' : ''}
@@ -806,23 +1011,23 @@
                 console.error('Failed to fetch past reports:', e);
             }
         }
-        
+
         function downloadReportCSV(reportName) {
             showAlert(`Downloading CSV from ${reportName}...`, 'success');
             window.location.href = `/api/download/csv?report=${reportName}`;
         }
 
         function createOperatorBadge(op, color) {
-            const bgColor = color === 'green' ? 'rgba(16, 185, 129, 0.2)' : 
-                           color === 'red' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)';
-            const textColor = color === 'green' ? '#10b981' : 
-                             color === 'red' ? '#ef4444' : '#f59e0b';
+            const bgColor = color === 'green' ? 'rgba(16, 185, 129, 0.2)' :
+                color === 'red' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)';
+            const textColor = color === 'green' ? '#10b981' :
+                color === 'red' ? '#ef4444' : '#f59e0b';
             return `<span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: ${bgColor}; color: ${textColor}; border: 1px solid ${textColor};">${op}</span>`;
         }
 
         async function openReportModal(reportName) {
             const modal = document.getElementById('report-modal');
-            
+
             // Show loading state
             document.getElementById('modal-title').textContent = 'Loading...';
             document.getElementById('modal-date').textContent = '';
@@ -833,53 +1038,53 @@
             document.getElementById('modal-installed-section').style.display = 'none';
             document.getElementById('modal-failed-section').style.display = 'none';
             document.getElementById('modal-other-section').style.display = 'none';
-            
+
             modal.style.display = 'flex';
-            
+
             try {
                 const res = await fetch(`/api/report-summary?report=${reportName}`);
                 const data = await res.json();
-                
+
                 if (data.error) {
                     document.getElementById('modal-title').textContent = 'Error';
                     document.getElementById('modal-date').textContent = data.error;
                     return;
                 }
-                
+
                 document.getElementById('modal-title').textContent = data.report;
                 document.getElementById('modal-date').textContent = `${data.date} ${data.time} ${data.timezone}`;
-                
+
                 // Update stats
                 document.getElementById('modal-tested').textContent = data.tested;
                 document.getElementById('modal-installed').textContent = data.installed;
                 document.getElementById('modal-failed').textContent = data.failed;
                 document.getElementById('modal-other').textContent = data.other;
-                
+
                 // Installed list
                 if (data.installed_list && data.installed_list.length > 0) {
                     document.getElementById('modal-installed-section').style.display = 'block';
                     document.getElementById('modal-installed-count').textContent = data.installed_list.length;
                     document.getElementById('modal-installed-list').innerHTML = data.installed_list.map(op => createOperatorBadge(op, 'green')).join('');
                 }
-                
+
                 // Failed list
                 if (data.failed_list && data.failed_list.length > 0) {
                     document.getElementById('modal-failed-section').style.display = 'block';
                     document.getElementById('modal-failed-count').textContent = data.failed_list.length;
                     document.getElementById('modal-failed-list').innerHTML = data.failed_list.map(op => createOperatorBadge(op, 'red')).join('');
                 }
-                
+
                 // Other list
                 if (data.other_list && data.other_list.length > 0) {
                     document.getElementById('modal-other-section').style.display = 'block';
                     document.getElementById('modal-other-count').textContent = data.other_list.length;
                     document.getElementById('modal-other-list').innerHTML = data.other_list.map(op => createOperatorBadge(op, 'yellow')).join('');
                 }
-                
+
                 // Set up buttons
                 document.getElementById('modal-view-link').href = data.url;
                 document.getElementById('modal-csv-btn').onclick = () => downloadReportCSV(reportName);
-                
+
             } catch (e) {
                 console.error('Failed to fetch report summary:', e);
                 document.getElementById('modal-title').textContent = 'Error';

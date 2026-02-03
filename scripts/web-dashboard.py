@@ -213,9 +213,49 @@ def get_latest_results():
         'success_rate': success_rate
     })
 
+@app.route('/api/test/config')
+def get_test_config():
+    """Get current test configuration"""
+    # Default operator lists
+    redhat_operators = [
+        "lvms-operator+", "odf-operator+", "ocs-operator+", "advanced-cluster-management+",
+        "multicluster-engine+", "topology-aware-lifecycle-manager", "sriov-network-operator",
+        "local-storage-operator", "cluster-logging", "compliance-operator", "odf-csi-addons-operator",
+        "cincinnati-operator", "nfd", "ptp-operator", "rhsso-operator", "file-integrity-operator",
+        "mcg-operator", "openshift-cert-manager-operator", "openshift-gitops-operator",
+        "quay-operator", "servicemeshoperator3", "metallb-operator", "kubevirt-hyperconverged",
+        "gatekeeper-operator-product", "ansible-automation-platform-operator", "mtc-operator",
+        "redhat-oadp-operator", "openshift-pipelines-operator-rh", "kiali-ossm",
+        "kubernetes-nmstate-operator", "rhacs-operator", "kernel-module-management-hub",
+        "kernel-module-management", "mta-operator", "loki-operator", "amq-broker-rhel8",
+        "amq-streams", "amq7-interconnect-operator", "lifecycle-agent", "numaresources-operator",
+        "volsync-product", "rhbk-operator", "cluster-observability-operator",
+        "openshift-custom-metrics-autoscaler-operator", "node-healthcheck-operator",
+        "self-node-remediation", "tempo-product"
+    ]
+    
+    certified_operators = [
+        "sriov-fec", "crunchy-postgres-operator","cloud-native-postgresql", "mongodb-enterprise", "vault-secrets-operator"
+    ]
+    
+    return jsonify({
+        'catalogs': [
+            {
+                'name': 'Red Hat Operators',
+                'index': 'registry.redhat.io/redhat/redhat-operator-index:v4.20',
+                'operators': redhat_operators
+            },
+            {
+                'name': 'Certified Operators', 
+                'index': 'registry.redhat.io/redhat/certified-operator-index:v4.20',
+                'operators': certified_operators
+            }
+        ]
+    })
+
 @app.route('/api/test/start', methods=['POST'])
 def start_test():
-    """Start test execution"""
+    """Start test execution with optional custom configuration"""
     logger.info(">>> TEST START requested")
     
     # Check if already running
@@ -224,10 +264,31 @@ def start_test():
         logger.warning("Test start rejected - test already running")
         return jsonify({'error': 'Test already running'}), 400
     
-    # Start test
-    ssh_command(f'tmux new-session -d -s operator-test "cd {REMOTE_BASE_DIR} && ./run-ocp-4.20-test-v2.sh"')
+    # Get custom configuration if provided
+    data = request.get_json() or {}
     
-    logger.info("Test started successfully")
+    if 'catalogs' in data and data['catalogs']:
+        # Build custom test script
+        commands = []
+        for catalog in data['catalogs']:
+            if catalog.get('operators'):
+                operators_str = ' '.join(catalog['operators'])
+                index = catalog.get('index', 'registry.redhat.io/redhat/redhat-operator-index:v4.20')
+                commands.append(f'time ./script/run-basic-batch-operators-test.sh {index} "{operators_str}"')
+        
+        if commands:
+            # Create a temporary test script
+            script_content = '\\n'.join(commands)
+            ssh_command(f'echo -e "{script_content}" > {REMOTE_BASE_DIR}/run-custom-test.sh && chmod +x {REMOTE_BASE_DIR}/run-custom-test.sh')
+            ssh_command(f'tmux new-session -d -s operator-test "cd {REMOTE_BASE_DIR} && ./run-custom-test.sh"')
+            logger.info(f"Custom test started with {len(commands)} catalog(s)")
+        else:
+            return jsonify({'error': 'No operators specified'}), 400
+    else:
+        # Use default test script
+        ssh_command(f'tmux new-session -d -s operator-test "cd {REMOTE_BASE_DIR} && ./run-ocp-4.20-test-v2.sh"')
+        logger.info("Default test started")
+    
     return jsonify({'status': 'Test started', 'timestamp': datetime.now().isoformat()})
 
 @app.route('/api/test/stop', methods=['POST'])
