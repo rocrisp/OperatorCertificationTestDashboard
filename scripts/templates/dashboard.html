@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,52 +11,53 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: #1a1a2e;
             color: #eee;
             min-height: 100vh;
         }
-        
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 1.5rem 2rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
-        
+
         .header h1 {
             font-size: 1.8rem;
             font-weight: 600;
         }
-        
+
         .header p {
             opacity: 0.9;
             margin-top: 0.25rem;
         }
-        
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
-        
+
         .grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
-        
+
         @media (max-width: 700px) {
             .grid {
                 grid-template-columns: 1fr;
             }
+
             .results-card {
                 grid-column: span 1;
             }
         }
-        
+
         .card {
             background: #16213e;
             border-radius: 12px;
@@ -63,7 +65,7 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             overflow: hidden;
         }
-        
+
         .card h2 {
             font-size: 1rem;
             text-transform: uppercase;
@@ -71,7 +73,7 @@
             color: #888;
             margin-bottom: 1rem;
         }
-        
+
         .status-indicator {
             display: flex;
             align-items: center;
@@ -79,34 +81,41 @@
             font-size: 1.5rem;
             font-weight: 600;
         }
-        
+
         .status-dot {
             width: 16px;
             height: 16px;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
-        
+
         .status-dot.running {
             background: #10b981;
             box-shadow: 0 0 10px #10b981;
         }
-        
+
         .status-dot.stopped {
             background: #6b7280;
         }
-        
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
         }
-        
+
         .stat-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 0.5rem;
         }
-        
+
         .stat {
             text-align: center;
             padding: 0.75rem 0.5rem;
@@ -114,13 +123,13 @@
             border-radius: 8px;
             min-width: 0;
         }
-        
+
         .stat-value {
             font-size: 1.5rem;
             font-weight: 700;
             color: #667eea;
         }
-        
+
         .stat-label {
             font-size: 0.75rem;
             color: #888;
@@ -129,13 +138,13 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        
+
         .btn-group {
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
         }
-        
+
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
@@ -145,44 +154,44 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        
+
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-        
+
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
-        
+
         .btn-danger {
             background: #ef4444;
             color: white;
         }
-        
+
         .btn-danger:hover:not(:disabled) {
             background: #dc2626;
         }
-        
+
         .btn-warning {
             background: #f59e0b;
             color: #1a1a2e;
         }
-        
+
         .btn-warning:hover:not(:disabled) {
             background: #d97706;
         }
-        
+
         .results-card {
             grid-column: 1 / -1;
         }
-        
+
         .results-bar {
             height: 8px;
             background: #374151;
@@ -190,26 +199,31 @@
             overflow: hidden;
             margin: 1rem 0;
         }
-        
+
         .results-bar-fill {
             height: 100%;
             background: linear-gradient(90deg, #10b981, #34d399);
             transition: width 0.5s;
         }
-        
+
         .results-stats {
             display: flex;
             justify-content: space-between;
             font-size: 0.9rem;
         }
-        
-        .results-stats .success { color: #10b981; }
-        .results-stats .failed { color: #ef4444; }
-        
+
+        .results-stats .success {
+            color: #10b981;
+        }
+
+        .results-stats .failed {
+            color: #ef4444;
+        }
+
         .output-card {
             grid-column: 1 / -1;
         }
-        
+
         .output {
             background: #0f0f1a;
             border-radius: 8px;
@@ -222,31 +236,31 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
-        
+
         .timestamp {
             font-size: 0.8rem;
             color: #666;
             margin-top: 1rem;
         }
-        
+
         .alert {
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1rem;
         }
-        
+
         .alert-success {
             background: rgba(16, 185, 129, 0.2);
             border: 1px solid #10b981;
             color: #10b981;
         }
-        
+
         .alert-error {
             background: rgba(239, 68, 68, 0.2);
             border: 1px solid #ef4444;
             color: #ef4444;
         }
-        
+
         #alerts {
             position: fixed;
             top: 1rem;
@@ -254,16 +268,173 @@
             z-index: 1000;
             max-width: 400px;
         }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #374151;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #eee;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #eee;
+        }
+
+        .modal-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-stat {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .modal-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .modal-stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
+
 <body>
     <div id="alerts"></div>
-    
-    <div class="header">
-        <h1>Operator Certification Test Dashboard</h1>
-        <p>OpenShift Operator Testing and Monitoring</p>
+
+    <!-- Report Summary Modal -->
+    <div id="report-modal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 id="modal-title">Report Summary</h2>
+                <button class="modal-close" onclick="closeReportModal()">&times;</button>
+            </div>
+            <div id="modal-date" style="color: #888; margin-bottom: 1rem;"></div>
+            
+            <!-- Stats Summary -->
+            <div class="modal-stats" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="modal-stat">
+                    <div class="modal-stat-value" id="modal-tested" style="color: #667eea;">0</div>
+                    <div class="modal-stat-label">Tested</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value" id="modal-installed" style="color: #10b981;">0</div>
+                    <div class="modal-stat-label">Installed</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value" id="modal-failed" style="color: #ef4444;">0</div>
+                    <div class="modal-stat-label">Failed</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="modal-stat-value" id="modal-other" style="color: #f59e0b;">0</div>
+                    <div class="modal-stat-label">Other</div>
+                </div>
+            </div>
+            
+            <!-- Operator Lists -->
+            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+                <!-- Installed Section -->
+                <div id="modal-installed-section" style="margin-bottom: 1rem;">
+                    <h3 style="color: #10b981; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="toggleSection('installed')">
+                        ▼ Installed Successfully (<span id="modal-installed-count">0</span>)
+                    </h3>
+                    <div id="modal-installed-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                </div>
+                
+                <!-- Failed Section -->
+                <div id="modal-failed-section" style="margin-bottom: 1rem; display: none;">
+                    <h3 style="color: #ef4444; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="toggleSection('failed')">
+                        ▼ Failed to Install (<span id="modal-failed-count">0</span>)
+                    </h3>
+                    <div id="modal-failed-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                </div>
+                
+                <!-- Other Section -->
+                <div id="modal-other-section" style="margin-bottom: 1rem; display: none;">
+                    <h3 style="color: #f59e0b; font-size: 0.9rem; margin-bottom: 0.5rem; cursor: pointer;" onclick="toggleSection('other')">
+                        ▼ Other/In Progress (<span id="modal-other-count">0</span>)
+                    </h3>
+                    <div id="modal-other-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <a id="modal-view-link" href="#" target="_blank" class="btn btn-primary" style="text-decoration: none; text-align: center; flex: 1;">
+                    Open Report
+                </a>
+                <button id="modal-csv-btn" class="btn btn-primary" style="flex: 1;" onclick="">
+                    Download CSV
+                </button>
+            </div>
+        </div>
     </div>
-    
+
+    <div class="header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1>Operator Certification Test Dashboard</h1>
+                <p>OpenShift Operator Testing and Monitoring</p>
+            </div>
+            <div id="timer-section" style="text-align: right; display: none;">
+                <div style="font-size: 0.85rem; opacity: 0.9;">
+                    <span>Started:</span>
+                    <span id="start-time" style="font-weight: 500;"></span>
+                </div>
+                <div style="font-size: 1.5rem; font-weight: 600; margin-top: 0.25rem;">
+                    <span id="elapsed-time">00:00:00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="grid">
             <div class="card">
@@ -281,8 +452,11 @@
                         <span style="color: #888;">State:</span>
                         <span id="current-state" style="color: #f59e0b; font-weight: 500;"></span>
                     </div>
-                    <div class="progress-bar" style="height: 6px; background: #374151; border-radius: 3px; margin: 0.75rem 0;">
-                        <div id="test-progress-bar" style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; transition: width 0.5s; width: 0%;"></div>
+                    <div class="progress-bar"
+                        style="height: 6px; background: #374151; border-radius: 3px; margin: 0.75rem 0;">
+                        <div id="test-progress-bar"
+                            style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; transition: width 0.5s; width: 0%;">
+                        </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #888;">
                         <span>Completed: <strong id="tests-completed" style="color: #10b981;">0</strong></span>
@@ -292,7 +466,7 @@
                 </div>
                 <p class="timestamp" id="last-update"></p>
             </div>
-            
+
             <div class="card">
                 <h2>Actions</h2>
                 <div class="btn-group">
@@ -301,9 +475,14 @@
                     <button class="btn btn-warning" id="btn-cleanup" onclick="cleanupCluster()">Cleanup</button>
                 </div>
             </div>
-            
+
             <div class="card results-card">
-                <h2>Latest Results</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin-bottom: 0;">Latest Results</h2>
+                    <button class="btn btn-primary" onclick="downloadCSV()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+                        Download CSV
+                    </button>
+                </div>
                 <div class="results-bar">
                     <div class="results-bar-fill" id="results-bar" style="width: 0%"></div>
                 </div>
@@ -315,15 +494,92 @@
                 </div>
                 <p class="timestamp" id="results-file"></p>
             </div>
-            
+
+            <div class="card output-card">
+                <h2>Completed Tests</h2>
+                <div id="completed-tests-container" style="max-height: 300px; overflow-y: auto;">
+                    <div id="completed-tests-list" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="color: #888;">Loading...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card output-card">
+                <h2>Past Reports</h2>
+                <div id="past-reports-container" style="max-height: 250px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #374151;">
+                                <th style="text-align: left; padding: 0.5rem; color: #888;">Report</th>
+                                <th style="text-align: left; padding: 0.5rem; color: #888;">Date</th>
+                                <th style="text-align: left; padding: 0.5rem; color: #888;">Time</th>
+                                <th style="text-align: center; padding: 0.5rem; color: #888;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="past-reports-list">
+                            <tr><td colspan="4" style="padding: 1rem; color: #888;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="card output-card">
                 <h2>Live Output</h2>
                 <div class="output" id="live-output">Waiting for test output...</div>
             </div>
         </div>
     </div>
-    
+
     <script>
+        // Timer variables
+        let testStartTime = null;
+        let timerInterval = null;
+        
+        function formatElapsedTime(startTime) {
+            const now = new Date();
+            const start = new Date(startTime);
+            const diffMs = now - start;
+            
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function updateTimer() {
+            if (testStartTime) {
+                document.getElementById('elapsed-time').textContent = formatElapsedTime(testStartTime);
+            }
+        }
+        
+        function startTimer(startTimeStr) {
+            // Parse start time from ISO format "2026-02-03T11:43:57"
+            testStartTime = startTimeStr;
+            
+            // Display in readable format
+            const startDate = new Date(startTimeStr);
+            const displayTime = startDate.toLocaleString();
+            document.getElementById('start-time').textContent = displayTime;
+            document.getElementById('timer-section').style.display = 'block';
+            
+            // Clear existing interval if any
+            if (timerInterval) clearInterval(timerInterval);
+            
+            // Update immediately and then every second
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+        
+        function stopTimer() {
+            document.getElementById('timer-section').style.display = 'none';
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            testStartTime = null;
+        }
+        
         function showAlert(message, type) {
             const alerts = document.getElementById('alerts');
             const alert = document.createElement('div');
@@ -332,56 +588,62 @@
             alerts.appendChild(alert);
             setTimeout(() => alert.remove(), 5000);
         }
-        
+
         async function fetchStatus() {
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
-                
+
                 const dot = document.getElementById('status-dot');
                 const text = document.getElementById('status-text');
                 const progressSection = document.getElementById('test-progress');
                 const currentOp = document.getElementById('current-operator');
-                
+
                 if (data.test_running) {
                     dot.className = 'status-dot running';
                     text.textContent = 'Test Running';
                     progressSection.style.display = 'block';
                     currentOp.textContent = data.current_operator || 'Starting...';
-                    
+
                     // Update current state
                     document.getElementById('current-state').textContent = data.current_state || 'Processing';
-                    
+
                     // Update progress stats
                     document.getElementById('tests-completed').textContent = data.tests_completed || 0;
                     document.getElementById('tests-remaining').textContent = data.tests_remaining || 0;
                     document.getElementById('tests-total').textContent = data.tests_total || 52;
-                    
+
                     // Update progress bar
                     const progressPercent = data.tests_total > 0 ? (data.tests_completed / data.tests_total * 100) : 0;
                     document.getElementById('test-progress-bar').style.width = `${progressPercent}%`;
-                    
+
+                    // Start/update timer
+                    if (data.start_time && !timerInterval) {
+                        startTimer(data.start_time);
+                    }
+
                     document.getElementById('btn-start').disabled = true;
                     document.getElementById('btn-stop').disabled = false;
                 } else {
                     dot.className = 'status-dot stopped';
                     text.textContent = 'Not Running';
                     progressSection.style.display = 'none';
+                    stopTimer();
                     document.getElementById('btn-start').disabled = false;
                     document.getElementById('btn-stop').disabled = true;
                 }
-                
+
                 document.getElementById('last-update').textContent = `Updated: ${new Date(data.timestamp).toLocaleTimeString()}`;
             } catch (e) {
                 console.error('Failed to fetch status:', e);
             }
         }
-        
+
         async function fetchResults() {
             try {
                 const res = await fetch('/api/results/latest');
                 const data = await res.json();
-                
+
                 if (!data.error) {
                     document.getElementById('results-total').textContent = data.total;
                     document.getElementById('results-success').textContent = data.success;
@@ -394,12 +656,12 @@
                 console.error('Failed to fetch results:', e);
             }
         }
-        
+
         async function fetchLiveOutput() {
             try {
                 const res = await fetch('/api/live-output');
                 const data = await res.json();
-                
+
                 if (data.output) {
                     document.getElementById('live-output').textContent = data.output;
                 }
@@ -407,14 +669,14 @@
                 console.error('Failed to fetch live output:', e);
             }
         }
-        
+
         async function startTest() {
             if (!confirm('Start operator certification test?')) return;
-            
+
             try {
                 const res = await fetch('/api/test/start', { method: 'POST' });
                 const data = await res.json();
-                
+
                 if (res.ok) {
                     showAlert('Test started successfully', 'success');
                     fetchStatus();
@@ -425,10 +687,10 @@
                 showAlert('Failed to start test', 'error');
             }
         }
-        
+
         async function stopTest() {
             if (!confirm('Stop the running test?')) return;
-            
+
             try {
                 const res = await fetch('/api/test/stop', { method: 'POST' });
                 showAlert('Test stopped', 'success');
@@ -437,13 +699,13 @@
                 showAlert('Failed to stop test', 'error');
             }
         }
-        
+
         async function cleanupCluster() {
             if (!confirm('Clean up all test operators? This will remove all subscriptions, CSVs, and test resources.')) return;
-            
+
             document.getElementById('btn-cleanup').disabled = true;
             document.getElementById('btn-cleanup').textContent = 'Cleaning...';
-            
+
             try {
                 const res = await fetch('/api/cleanup', { method: 'POST' });
                 const data = await res.json();
@@ -456,16 +718,208 @@
                 document.getElementById('btn-cleanup').textContent = 'Cleanup';
             }
         }
+
+        function downloadCSV() {
+            showAlert('Starting CSV download...', 'success');
+            // Trigger download by navigating to the API endpoint
+            window.location.href = '/api/download/csv';
+        }
+
+        async function fetchCompletedTests() {
+            try {
+                const res = await fetch('/api/completed-tests');
+                const data = await res.json();
+                
+                const container = document.getElementById('completed-tests-list');
+                
+                if (data.tests && data.tests.length > 0) {
+                    container.innerHTML = data.tests.map(test => {
+                        let bgColor, textColor;
+                        if (test.status === 'passed') {
+                            bgColor = 'rgba(16, 185, 129, 0.2)';
+                            textColor = '#10b981';
+                        } else if (test.status === 'failed') {
+                            bgColor = 'rgba(239, 68, 68, 0.2)';
+                            textColor = '#ef4444';
+                        } else {
+                            bgColor = 'rgba(107, 114, 128, 0.2)';
+                            textColor = '#9ca3af';
+                        }
+                        return `<span style="
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 4px;
+                            font-size: 0.8rem;
+                            background: ${bgColor};
+                            color: ${textColor};
+                            border: 1px solid ${textColor};
+                        ">${test.name}</span>`;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<span style="color: #888;">No completed tests yet</span>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch completed tests:', e);
+            }
+        }
+
+        async function fetchPastReports() {
+            try {
+                const res = await fetch('/api/reports');
+                const data = await res.json();
+                
+                const tbody = document.getElementById('past-reports-list');
+                
+                if (data.reports && data.reports.length > 0) {
+                    tbody.innerHTML = data.reports.map((report, index) => {
+                        // Parse report name: report_2026-02-03_11-43-57_EST
+                        const parts = report.replace('report_', '').split('_');
+                        const date = parts[0] || '';
+                        const time = parts[1] ? parts[1].replace(/-/g, ':') : '';
+                        const tz = parts[2] || '';
+                        
+                        const isLatest = index === 0;
+                        const rowStyle = isLatest ? 'background: rgba(102, 126, 234, 0.1);' : '';
+                        
+                        return `<tr style="border-bottom: 1px solid #374151; ${rowStyle}">
+                            <td style="padding: 0.5rem;">
+                                ${isLatest ? '<span style="color: #667eea; font-weight: 500;">● </span>' : ''}
+                                ${report}
+                            </td>
+                            <td style="padding: 0.5rem; color: #9ca3af;">${date}</td>
+                            <td style="padding: 0.5rem; color: #9ca3af;">${time} ${tz}</td>
+                            <td style="padding: 0.5rem; text-align: center;">
+                                <button onclick="downloadReportCSV('${report}')" 
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #374151; color: #eee; border: none; border-radius: 4px; cursor: pointer;">
+                                    CSV
+                                </button>
+                                <button onclick="openReportModal('${report}')"
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #374151; color: #eee; border: none; border-radius: 4px; cursor: pointer; margin-left: 0.25rem;">
+                                    View
+                                </button>
+                            </td>
+                        </tr>`;
+                    }).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="padding: 1rem; color: #888;">No reports found</td></tr>';
+                }
+            } catch (e) {
+                console.error('Failed to fetch past reports:', e);
+            }
+        }
         
+        function downloadReportCSV(reportName) {
+            showAlert(`Downloading CSV from ${reportName}...`, 'success');
+            window.location.href = `/api/download/csv?report=${reportName}`;
+        }
+
+        function createOperatorBadge(op, color) {
+            const bgColor = color === 'green' ? 'rgba(16, 185, 129, 0.2)' : 
+                           color === 'red' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)';
+            const textColor = color === 'green' ? '#10b981' : 
+                             color === 'red' ? '#ef4444' : '#f59e0b';
+            return `<span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; background: ${bgColor}; color: ${textColor}; border: 1px solid ${textColor};">${op}</span>`;
+        }
+
+        async function openReportModal(reportName) {
+            const modal = document.getElementById('report-modal');
+            
+            // Show loading state
+            document.getElementById('modal-title').textContent = 'Loading...';
+            document.getElementById('modal-date').textContent = '';
+            document.getElementById('modal-tested').textContent = '-';
+            document.getElementById('modal-installed').textContent = '-';
+            document.getElementById('modal-failed').textContent = '-';
+            document.getElementById('modal-other').textContent = '-';
+            document.getElementById('modal-installed-section').style.display = 'none';
+            document.getElementById('modal-failed-section').style.display = 'none';
+            document.getElementById('modal-other-section').style.display = 'none';
+            
+            modal.style.display = 'flex';
+            
+            try {
+                const res = await fetch(`/api/report-summary?report=${reportName}`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    document.getElementById('modal-title').textContent = 'Error';
+                    document.getElementById('modal-date').textContent = data.error;
+                    return;
+                }
+                
+                document.getElementById('modal-title').textContent = data.report;
+                document.getElementById('modal-date').textContent = `${data.date} ${data.time} ${data.timezone}`;
+                
+                // Update stats
+                document.getElementById('modal-tested').textContent = data.tested;
+                document.getElementById('modal-installed').textContent = data.installed;
+                document.getElementById('modal-failed').textContent = data.failed;
+                document.getElementById('modal-other').textContent = data.other;
+                
+                // Installed list
+                if (data.installed_list && data.installed_list.length > 0) {
+                    document.getElementById('modal-installed-section').style.display = 'block';
+                    document.getElementById('modal-installed-count').textContent = data.installed_list.length;
+                    document.getElementById('modal-installed-list').innerHTML = data.installed_list.map(op => createOperatorBadge(op, 'green')).join('');
+                }
+                
+                // Failed list
+                if (data.failed_list && data.failed_list.length > 0) {
+                    document.getElementById('modal-failed-section').style.display = 'block';
+                    document.getElementById('modal-failed-count').textContent = data.failed_list.length;
+                    document.getElementById('modal-failed-list').innerHTML = data.failed_list.map(op => createOperatorBadge(op, 'red')).join('');
+                }
+                
+                // Other list
+                if (data.other_list && data.other_list.length > 0) {
+                    document.getElementById('modal-other-section').style.display = 'block';
+                    document.getElementById('modal-other-count').textContent = data.other_list.length;
+                    document.getElementById('modal-other-list').innerHTML = data.other_list.map(op => createOperatorBadge(op, 'yellow')).join('');
+                }
+                
+                // Set up buttons
+                document.getElementById('modal-view-link').href = data.url;
+                document.getElementById('modal-csv-btn').onclick = () => downloadReportCSV(reportName);
+                
+            } catch (e) {
+                console.error('Failed to fetch report summary:', e);
+                document.getElementById('modal-title').textContent = 'Error';
+                document.getElementById('modal-date').textContent = 'Failed to load report summary';
+            }
+        }
+
+        function toggleSection(section) {
+            const list = document.getElementById(`modal-${section}-list`);
+            if (list.style.display === 'none') {
+                list.style.display = 'flex';
+            } else {
+                list.style.display = 'none';
+            }
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').style.display = 'none';
+        }
+
+        function closeModal(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                closeReportModal();
+            }
+        }
+
         // Initial fetch
         fetchStatus();
         fetchResults();
         fetchLiveOutput();
-        
+        fetchCompletedTests();
+        fetchPastReports();
+
         // Auto-refresh
         setInterval(fetchStatus, 10000);
         setInterval(fetchResults, 30000);
         setInterval(fetchLiveOutput, 5000);
+        setInterval(fetchCompletedTests, 15000);
+        setInterval(fetchPastReports, 60000);  // Refresh reports list every minute
     </script>
 </body>
+
 </html>

@@ -6,7 +6,7 @@ Requires: Flask, paramiko
 Install: pip3 install flask paramiko
 """
 
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, Response
 import subprocess
 import json
 import os
@@ -53,7 +53,7 @@ logger.info(f"Log file: {LOG_FILE}")
 logger.info(f"Remote host: {REMOTE_HOST}")
 logger.info("=" * 60)
 
-def ssh_command(cmd, log_cmd=False):
+def ssh_command(cmd, log_cmd=False, timeout=30):
     """Execute SSH command and return output"""
     try:
         if log_cmd:
@@ -62,13 +62,13 @@ def ssh_command(cmd, log_cmd=False):
             ['ssh', REMOTE_HOST, cmd],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=timeout
         )
         if result.returncode != 0 and result.stderr:
             logger.warning(f"SSH command returned non-zero: {result.stderr[:200]}")
         return result.stdout
     except subprocess.TimeoutExpired:
-        logger.error(f"SSH command timed out: {cmd[:100]}...")
+        logger.error(f"SSH command timed out after {timeout}s: {cmd[:100]}...")
         return "Error: Command timed out"
     except Exception as e:
         logger.error(f"SSH command failed: {str(e)}")
@@ -100,6 +100,7 @@ def get_status():
     tests_total = 0
     tests_remaining = 0
     report_name = ''
+    start_time = ''
     
     if is_running:
         # Get current operator from tmux output (handle wrapped lines)
@@ -133,6 +134,19 @@ def get_status():
         if latest_report_dir:
             report_name = os.path.basename(latest_report_dir)
             
+            # Extract start time from report name (report_2026-02-03_11-43-57_EST)
+            # Format: report_YYYY-MM-DD_HH-MM-SS_TZ
+            try:
+                time_part = report_name.replace('report_', '')  # 2026-02-03_11-43-57_EST
+                parts = time_part.rsplit('_', 1)  # Split off timezone ['2026-02-03_11-43-57', 'EST']
+                date_time = parts[0]  # 2026-02-03_11-43-57
+                date_str, time_str = date_time.split('_')  # ['2026-02-03', '11-43-57']
+                time_str = time_str.replace('-', ':')  # 11:43:57
+                # ISO format for JavaScript: 2026-02-03T11:43:57
+                start_time = f"{date_str}T{time_str}"
+            except:
+                start_time = ''
+            
             # Get total operators from operator-list.txt
             total_raw = ssh_command(f'wc -l < "{latest_report_dir}/operator-list.txt" 2>/dev/null || echo 0')
             tests_total = safe_int(total_raw)
@@ -154,6 +168,7 @@ def get_status():
         'tests_total': tests_total,
         'tests_remaining': tests_remaining,
         'report_name': report_name,
+        'start_time': start_time,
         'timestamp': datetime.now().isoformat()
     })
 
@@ -238,6 +253,234 @@ def get_live_output():
     # Use -S - to capture entire scrollback history, then get last 200 lines
     output = ssh_command('tmux capture-pane -t operator-test -p -S - 2>/dev/null | tail -200').strip()
     return jsonify({'output': output})
+
+@app.route('/api/completed-tests')
+def get_completed_tests():
+    """Get list of completed tests with status"""
+    # Get latest report directory
+    latest_report_dir = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -1').strip()
+    
+    if not latest_report_dir:
+        return jsonify({'error': 'No reports found', 'tests': []})
+    
+    report_name = os.path.basename(latest_report_dir)
+    
+    # Get list of completed operator folders
+    folders_raw = ssh_command(f'ls -d "{latest_report_dir}"/*/ 2>/dev/null | xargs -I {{}} basename {{}}')
+    completed_operators = [f.strip() for f in folders_raw.strip().split('\n') if f.strip()]
+    
+    # Get pass/fail status from log file
+    log_file = ssh_command(f'ls -t "{latest_report_dir}"/output_*.log 2>/dev/null | head -1').strip()
+    
+    status_map = {}
+    if log_file:
+        # Get installed operators (success)
+        installed_raw = ssh_command(f'grep "operator .* installed" "{log_file}" 2>/dev/null | sed "s/operator \\(.*\\) installed/\\1/"')
+        for op in installed_raw.strip().split('\n'):
+            op = op.strip()
+            if op:
+                status_map[op] = 'passed'
+        
+        # Get failed operators
+        failed_raw = ssh_command(f'grep "Operator failed to install" "{log_file}" 2>/dev/null')
+        # Parse context to find which operator failed
+        failed_context = ssh_command(f'grep -B5 "Operator failed to install" "{log_file}" 2>/dev/null | grep "package=" | sed "s/.*package= \\([^ ]*\\).*/\\1/"')
+        for op in failed_context.strip().split('\n'):
+            op = op.strip()
+            if op:
+                status_map[op] = 'failed'
+    
+    # Build test list with status
+    tests = []
+    for op in completed_operators:
+        tests.append({
+            'name': op,
+            'status': status_map.get(op, 'completed')
+        })
+    
+    # Sort: failed first, then by name
+    tests.sort(key=lambda x: (0 if x['status'] == 'failed' else 1, x['name']))
+    
+    return jsonify({
+        'report': report_name,
+        'tests': tests,
+        'total': len(tests),
+        'passed': sum(1 for t in tests if t['status'] == 'passed'),
+        'failed': sum(1 for t in tests if t['status'] == 'failed')
+    })
+
+@app.route('/api/reports')
+def list_reports():
+    """List available report directories"""
+    reports_raw = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -20')
+    reports = [os.path.basename(r) for r in reports_raw.strip().split('\n') if r]
+    return jsonify({'reports': reports})
+
+@app.route('/api/report-summary')
+def get_report_summary():
+    """Get summary stats for a specific report"""
+    report_name = request.args.get('report', None)
+    
+    if not report_name:
+        return jsonify({'error': 'Report name required'}), 400
+    
+    report_dir = f"{REPORT_DIR}/{report_name}"
+    
+    # Check if report exists
+    exists = ssh_command(f'test -d "{report_dir}" && echo "yes" || echo "no"').strip()
+    if exists != 'yes':
+        return jsonify({'error': 'Report not found'}), 404
+    
+    # Get list of completed operator folders (operators that have been tested)
+    folders_raw = ssh_command(f'ls -d "{report_dir}"/*/ 2>/dev/null | xargs -I {{}} basename {{}}')
+    tested_operators = set(f.strip() for f in folders_raw.strip().split('\n') if f.strip())
+    
+    # Get pass/fail status from log file
+    log_file = ssh_command(f'ls -t "{report_dir}"/output_*.log 2>/dev/null | head -1').strip()
+    
+    installed_list = []
+    failed_list = []
+    
+    if log_file:
+        # Get installed operators (success) - "operator X installed"
+        installed_raw = ssh_command(f'grep "operator .* installed" "{log_file}" 2>/dev/null | sed "s/operator \\(.*\\) installed/\\1/"')
+        for op in installed_raw.strip().split('\n'):
+            op = op.strip()
+            if op:
+                installed_list.append(op)
+        
+        # Get failed operators - "Operator failed to install"
+        failed_context = ssh_command(f'grep -B5 "Operator failed to install" "{log_file}" 2>/dev/null | grep "package=" | sed "s/.*package= \\([^ ]*\\).*/\\1/"')
+        for op in failed_context.strip().split('\n'):
+            op = op.strip()
+            if op:
+                failed_list.append(op)
+    
+    # Make lists unique
+    installed_list = sorted(set(installed_list))
+    failed_list = sorted(set(failed_list))
+    
+    # Find operators that are in tested but not in installed or failed (in progress or other)
+    installed_set = set(installed_list)
+    failed_set = set(failed_list)
+    other_list = sorted(tested_operators - installed_set - failed_set)
+    
+    # Parse date/time from report name
+    try:
+        time_part = report_name.replace('report_', '')
+        parts = time_part.rsplit('_', 1)
+        date_str, time_str = parts[0].split('_')
+        time_str = time_str.replace('-', ':')
+        tz = parts[1] if len(parts) > 1 else ''
+    except:
+        date_str = ''
+        time_str = ''
+        tz = ''
+    
+    return jsonify({
+        'report': report_name,
+        'date': date_str,
+        'time': time_str,
+        'timezone': tz,
+        'tested': len(tested_operators),
+        'installed': len(installed_list),
+        'failed': len(failed_list),
+        'other': len(other_list),
+        'tested_list': sorted(tested_operators),
+        'installed_list': installed_list,
+        'failed_list': failed_list,
+        'other_list': other_list,
+        'url': f'http://10.1.24.2/{report_name}/'
+    })
+
+@app.route('/api/download/csv')
+def download_csv():
+    """Download results.csv from the latest or specified report"""
+    report_name = request.args.get('report', None)
+    
+    # Get the report directory
+    if report_name:
+        report_dir = f"{REPORT_DIR}/{report_name}"
+    else:
+        # Get latest report
+        report_dir = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -1').strip()
+    
+    if not report_dir:
+        return jsonify({'error': 'No reports found'}), 404
+    
+    report_name = os.path.basename(report_dir)
+    csv_path = f"{report_dir}/results.csv"
+    
+    logger.info(f">>> CSV DOWNLOAD requested: {csv_path}")
+    
+    # Check if file exists
+    exists = ssh_command(f'test -f "{csv_path}" && echo "yes" || echo "no"').strip()
+    if exists != 'yes':
+        return jsonify({'error': 'CSV file not found'}), 404
+    
+    # Fetch the CSV content (longer timeout for large files)
+    csv_content = ssh_command(f'cat "{csv_path}"', log_cmd=False, timeout=120)
+    
+    if csv_content.startswith('Error:'):
+        return jsonify({'error': csv_content}), 500
+    
+    logger.info(f"CSV download complete: {len(csv_content)} bytes")
+    
+    # Return as downloadable file
+    return Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=results_{report_name}.csv'}
+    )
+
+@app.route('/api/download/csv/combined')
+def download_combined_csv():
+    """Download combined results.csv from multiple reports"""
+    # Get list of reports to combine (comma-separated) or default to latest 5
+    reports_param = request.args.get('reports', None)
+    
+    if reports_param:
+        report_names = reports_param.split(',')
+    else:
+        # Get latest report only by default
+        latest = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -1').strip()
+        report_names = [os.path.basename(latest)] if latest else []
+    
+    if not report_names:
+        return jsonify({'error': 'No reports found'}), 404
+    
+    logger.info(f">>> COMBINED CSV DOWNLOAD requested: {report_names}")
+    
+    combined_csv = []
+    header_added = False
+    
+    for report_name in report_names:
+        csv_path = f"{REPORT_DIR}/{report_name}/results.csv"
+        exists = ssh_command(f'test -f "{csv_path}" && echo "yes" || echo "no"').strip()
+        
+        if exists == 'yes':
+            content = ssh_command(f'cat "{csv_path}"', log_cmd=False, timeout=120)
+            lines = content.strip().split('\n')
+            
+            if lines:
+                if not header_added:
+                    # Add header from first file
+                    combined_csv.append(lines[0])
+                    header_added = True
+                # Add data rows (skip header in subsequent files)
+                combined_csv.extend(lines[1:] if header_added else lines)
+    
+    if not combined_csv:
+        return jsonify({'error': 'No CSV data found'}), 404
+    
+    combined_content = '\n'.join(combined_csv)
+    logger.info(f"Combined CSV download complete: {len(combined_content)} bytes from {len(report_names)} reports")
+    
+    return Response(
+        combined_content,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=combined_results.csv'}
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
