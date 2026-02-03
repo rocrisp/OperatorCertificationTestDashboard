@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operator Test Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 700px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .results-card {
+                grid-column: span 1;
+            }
+        }
+        
+        .card {
+            background: #16213e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .card h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            margin-bottom: 1rem;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.running {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+        
+        .status-dot.stopped {
+            background: #6b7280;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 0.75rem 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            min-width: 0;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        .btn-warning {
+            background: #f59e0b;
+            color: #1a1a2e;
+        }
+        
+        .btn-warning:hover:not(:disabled) {
+            background: #d97706;
+        }
+        
+        .results-card {
+            grid-column: 1 / -1;
+        }
+        
+        .results-bar {
+            height: 8px;
+            background: #374151;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .results-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.5s;
+        }
+        
+        .results-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        
+        .results-stats .success { color: #10b981; }
+        .results-stats .failed { color: #ef4444; }
+        
+        .output-card {
+            grid-column: 1 / -1;
+        }
+        
+        .output {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .timestamp {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid #10b981;
+            color: #10b981;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #ef4444;
+        }
+        
+        #alerts {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="alerts"></div>
+    
+    <div class="header">
+        <h1>Operator Certification Test Dashboard</h1>
+        <p>OpenShift Operator Testing and Monitoring</p>
+    </div>
+    
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <h2>Test Status</h2>
+                <div class="status-indicator">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Checking...</span>
+                </div>
+                <div id="test-progress" style="margin-top: 1rem; display: none;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <span style="color: #888;">Current:</span>
+                        <span id="current-operator" style="color: #667eea; font-weight: 500;"></span>
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                        <span style="color: #888;">State:</span>
+                        <span id="current-state" style="color: #f59e0b; font-weight: 500;"></span>
+                    </div>
+                    <div class="progress-bar" style="height: 6px; background: #374151; border-radius: 3px; margin: 0.75rem 0;">
+                        <div id="test-progress-bar" style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; transition: width 0.5s; width: 0%;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #888;">
+                        <span>Completed: <strong id="tests-completed" style="color: #10b981;">0</strong></span>
+                        <span>Remaining: <strong id="tests-remaining" style="color: #f59e0b;">0</strong></span>
+                        <span>Total: <strong id="tests-total" style="color: #eee;">52</strong></span>
+                    </div>
+                </div>
+                <p class="timestamp" id="last-update"></p>
+            </div>
+            
+            <div class="card">
+                <h2>Actions</h2>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btn-start" onclick="startTest()">Start Test</button>
+                    <button class="btn btn-danger" id="btn-stop" onclick="stopTest()">Stop Test</button>
+                    <button class="btn btn-warning" id="btn-cleanup" onclick="cleanupCluster()">Cleanup</button>
+                </div>
+            </div>
+            
+            <div class="card results-card">
+                <h2>Latest Results</h2>
+                <div class="results-bar">
+                    <div class="results-bar-fill" id="results-bar" style="width: 0%"></div>
+                </div>
+                <div class="results-stats">
+                    <span>Total: <strong id="results-total">-</strong></span>
+                    <span class="success">Success: <strong id="results-success">-</strong></span>
+                    <span class="failed">Failed: <strong id="results-failed">-</strong></span>
+                    <span>Rate: <strong id="results-rate">-</strong>%</span>
+                </div>
+                <p class="timestamp" id="results-file"></p>
+            </div>
+            
+            <div class="card output-card">
+                <h2>Live Output</h2>
+                <div class="output" id="live-output">Waiting for test output...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showAlert(message, type) {
+            const alerts = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alerts.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+        
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                const dot = document.getElementById('status-dot');
+                const text = document.getElementById('status-text');
+                const progressSection = document.getElementById('test-progress');
+                const currentOp = document.getElementById('current-operator');
+                
+                if (data.test_running) {
+                    dot.className = 'status-dot running';
+                    text.textContent = 'Test Running';
+                    progressSection.style.display = 'block';
+                    currentOp.textContent = data.current_operator || 'Starting...';
+                    
+                    // Update current state
+                    document.getElementById('current-state').textContent = data.current_state || 'Processing';
+                    
+                    // Update progress stats
+                    document.getElementById('tests-completed').textContent = data.tests_completed || 0;
+                    document.getElementById('tests-remaining').textContent = data.tests_remaining || 0;
+                    document.getElementById('tests-total').textContent = data.tests_total || 52;
+                    
+                    // Update progress bar
+                    const progressPercent = data.tests_total > 0 ? (data.tests_completed / data.tests_total * 100) : 0;
+                    document.getElementById('test-progress-bar').style.width = `${progressPercent}%`;
+                    
+                    document.getElementById('btn-start').disabled = true;
+                    document.getElementById('btn-stop').disabled = false;
+                } else {
+                    dot.className = 'status-dot stopped';
+                    text.textContent = 'Not Running';
+                    progressSection.style.display = 'none';
+                    document.getElementById('btn-start').disabled = false;
+                    document.getElementById('btn-stop').disabled = true;
+                }
+                
+                document.getElementById('last-update').textContent = `Updated: ${new Date(data.timestamp).toLocaleTimeString()}`;
+            } catch (e) {
+                console.error('Failed to fetch status:', e);
+            }
+        }
+        
+        async function fetchResults() {
+            try {
+                const res = await fetch('/api/results/latest');
+                const data = await res.json();
+                
+                if (!data.error) {
+                    document.getElementById('results-total').textContent = data.total;
+                    document.getElementById('results-success').textContent = data.success;
+                    document.getElementById('results-failed').textContent = data.failed;
+                    document.getElementById('results-rate').textContent = data.success_rate;
+                    document.getElementById('results-bar').style.width = `${data.success_rate}%`;
+                    document.getElementById('results-file').textContent = data.log_file;
+                }
+            } catch (e) {
+                console.error('Failed to fetch results:', e);
+            }
+        }
+        
+        async function fetchLiveOutput() {
+            try {
+                const res = await fetch('/api/live-output');
+                const data = await res.json();
+                
+                if (data.output) {
+                    document.getElementById('live-output').textContent = data.output;
+                }
+            } catch (e) {
+                console.error('Failed to fetch live output:', e);
+            }
+        }
+        
+        async function startTest() {
+            if (!confirm('Start operator certification test?')) return;
+            
+            try {
+                const res = await fetch('/api/test/start', { method: 'POST' });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    showAlert('Test started successfully', 'success');
+                    fetchStatus();
+                } else {
+                    showAlert(data.error || 'Failed to start test', 'error');
+                }
+            } catch (e) {
+                showAlert('Failed to start test', 'error');
+            }
+        }
+        
+        async function stopTest() {
+            if (!confirm('Stop the running test?')) return;
+            
+            try {
+                const res = await fetch('/api/test/stop', { method: 'POST' });
+                showAlert('Test stopped', 'success');
+                fetchStatus();
+            } catch (e) {
+                showAlert('Failed to stop test', 'error');
+            }
+        }
+        
+        async function cleanupCluster() {
+            if (!confirm('Clean up all test operators? This will remove all subscriptions, CSVs, and test resources.')) return;
+            
+            document.getElementById('btn-cleanup').disabled = true;
+            document.getElementById('btn-cleanup').textContent = 'Cleaning...';
+            
+            try {
+                const res = await fetch('/api/cleanup', { method: 'POST' });
+                const data = await res.json();
+                showAlert('Cleanup complete', 'success');
+                fetchStatus();
+            } catch (e) {
+                showAlert('Cleanup failed', 'error');
+            } finally {
+                document.getElementById('btn-cleanup').disabled = false;
+                document.getElementById('btn-cleanup').textContent = 'Cleanup';
+            }
+        }
+        
+        // Initial fetch
+        fetchStatus();
+        fetchResults();
+        fetchLiveOutput();
+        
+        // Auto-refresh
+        setInterval(fetchStatus, 10000);
+        setInterval(fetchResults, 30000);
+        setInterval(fetchLiveOutput, 5000);
+    </script>
+</body>
+</html>
