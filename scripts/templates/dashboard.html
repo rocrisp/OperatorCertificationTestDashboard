@@ -582,6 +582,11 @@
                             <option value="20">Last 20</option>
                             <option value="30">Last 30</option>
                         </select>
+                        <button onclick="fetchPastReports()" 
+                            style="padding: 0.3rem 0.6rem; font-size: 0.8rem; background: #374151; color: #eee; border: 1px solid #4b5563; border-radius: 4px; cursor: pointer;"
+                            title="Refresh reports list">
+                            ↻ Refresh
+                        </button>
                     </div>
                 </div>
                 <div id="past-reports-container" style="max-height: 250px; overflow-y: auto;">
@@ -1279,7 +1284,7 @@
         setInterval(fetchResults, 30000);
         setInterval(fetchLiveOutput, 5000);
         setInterval(fetchCompletedTests, 15000);
-        setInterval(fetchPastReports, 60000);  // Refresh reports list every minute
+        // Past Reports: no auto-refresh - use manual Refresh button instead
     </script>
 </body>
 
