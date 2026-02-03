@@ -567,11 +567,24 @@
             </div>
 
             <div class="card output-card">
-                <h2>Past Reports</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h2 style="margin-bottom: 0;">Past Reports</h2>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <span id="selected-count" style="font-size: 0.8rem; color: #888;"></span>
+                        <button id="btn-download-selected" onclick="downloadSelectedCSVs()" 
+                            style="padding: 0.4rem 0.75rem; font-size: 0.8rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">
+                            Download Selected
+                        </button>
+                    </div>
+                </div>
                 <div id="past-reports-container" style="max-height: 250px; overflow-y: auto;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
                         <thead>
                             <tr style="border-bottom: 1px solid #374151;">
+                                <th style="text-align: center; padding: 0.5rem; width: 40px;">
+                                    <input type="checkbox" id="select-all-reports" onchange="toggleAllReports(this)" 
+                                        style="cursor: pointer; width: 16px; height: 16px;">
+                                </th>
                                 <th style="text-align: left; padding: 0.5rem; color: #888;">Report</th>
                                 <th style="text-align: left; padding: 0.5rem; color: #888;">Date</th>
                                 <th style="text-align: left; padding: 0.5rem; color: #888;">Time</th>
@@ -580,7 +593,7 @@
                         </thead>
                         <tbody id="past-reports-list">
                             <tr>
-                                <td colspan="4" style="padding: 1rem; color: #888;">Loading...</td>
+                                <td colspan="5" style="padding: 1rem; color: #888;">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1030,6 +1043,10 @@
                         const rowStyle = isLatest ? 'background: rgba(102, 126, 234, 0.1);' : '';
 
                         return `<tr style="border-bottom: 1px solid #374151; ${rowStyle}">
+                            <td style="padding: 0.5rem; text-align: center;">
+                                <input type="checkbox" class="report-checkbox" value="${report}" 
+                                    onchange="updateSelectedCount()" style="cursor: pointer; width: 16px; height: 16px;">
+                            </td>
                             <td style="padding: 0.5rem;">
                                 ${isLatest ? '<span style="color: #667eea; font-weight: 500;">● </span>' : ''}
                                 ${report}
@@ -1048,8 +1065,11 @@
                             </td>
                         </tr>`;
                     }).join('');
+                    // Reset select all checkbox
+                    document.getElementById('select-all-reports').checked = false;
+                    updateSelectedCount();
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4" style="padding: 1rem; color: #888;">No reports found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="padding: 1rem; color: #888;">No reports found</td></tr>';
                 }
             } catch (e) {
                 console.error('Failed to fetch past reports:', e);
@@ -1059,6 +1079,53 @@
         function downloadReportCSV(reportName) {
             showAlert(`Downloading CSV from ${reportName}...`, 'success');
             window.location.href = `/api/download/csv?report=${reportName}`;
+        }
+
+        function toggleAllReports(checkbox) {
+            const reportCheckboxes = document.querySelectorAll('.report-checkbox');
+            reportCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('.report-checkbox:checked');
+            const countSpan = document.getElementById('selected-count');
+            const downloadBtn = document.getElementById('btn-download-selected');
+            const selectAllCheckbox = document.getElementById('select-all-reports');
+            const allCheckboxes = document.querySelectorAll('.report-checkbox');
+            
+            if (selected.length > 0) {
+                countSpan.textContent = `${selected.length} selected`;
+                downloadBtn.style.display = 'inline-block';
+            } else {
+                countSpan.textContent = '';
+                downloadBtn.style.display = 'none';
+            }
+            
+            // Update "select all" checkbox state
+            if (allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = selected.length === allCheckboxes.length;
+                selectAllCheckbox.indeterminate = selected.length > 0 && selected.length < allCheckboxes.length;
+            }
+        }
+
+        function downloadSelectedCSVs() {
+            const selected = document.querySelectorAll('.report-checkbox:checked');
+            if (selected.length === 0) {
+                showAlert('No reports selected', 'error');
+                return;
+            }
+            
+            if (selected.length === 1) {
+                // Single report - use regular download
+                downloadReportCSV(selected[0].value);
+                return;
+            }
+            
+            // Multiple reports - use combined download
+            const reports = Array.from(selected).map(cb => cb.value).join(',');
+            showAlert(`Combining ${selected.length} reports into single CSV...`, 'success');
+            window.location.href = `/api/download/csv/combined?reports=${encodeURIComponent(reports)}`;
         }
 
         function createOperatorBadge(op, color) {
