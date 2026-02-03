@@ -4,9 +4,93 @@ This guide covers deploying the Operator Certification Test Dashboard using Dock
 
 ## Table of Contents
 
-1. [Docker Deployment](#docker-deployment)
-2. [Kubernetes/OpenShift Deployment with Helm](#kubernetsopenshift-deployment-with-helm)
-3. [Configuration Reference](#configuration-reference)
+1. [OpenShift Deployment with Makefile (Recommended)](#openshift-deployment-with-makefile-recommended)
+2. [Docker Deployment](#docker-deployment)
+3. [Kubernetes/OpenShift Deployment with Helm](#kubernetsopenshift-deployment-with-helm)
+4. [Configuration Reference](#configuration-reference)
+
+---
+
+## OpenShift Deployment with Makefile (Recommended)
+
+The simplest way to deploy on OpenShift using the built-in image registry and ImageStreams.
+
+### Prerequisites
+
+- `oc` CLI installed and logged into your OpenShift cluster
+- `helm` CLI installed
+- SSH key for accessing the remote cluster
+
+### Quick Start
+
+```bash
+# 1. Setup: Create namespace, SSH secret, ImageStream, and BuildConfig
+make setup SSH_KEY_PATH=~/.ssh/id_rsa
+
+# 2. Build: Build the container image in OpenShift
+make build
+
+# 3. Deploy: Deploy with Helm using the ImageStream
+make deploy
+
+# 4. Get the dashboard URL
+make get-route
+```
+
+### All-in-One Command
+
+```bash
+# Build and deploy in one step (after setup)
+make all
+```
+
+### Available Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make help` | Show all available targets |
+| `make setup` | Create namespace, SSH secret, ImageStream, BuildConfig |
+| `make build` | Build the application using OpenShift binary build |
+| `make deploy` | Deploy using Helm with ImageStream |
+| `make all` | Build and deploy |
+| `make rebuild` | Rebuild and redeploy |
+| `make status` | Show deployment status |
+| `make logs` | Show application logs |
+| `make get-route` | Get the dashboard URL |
+| `make port-forward` | Port-forward to localhost:5001 |
+| `make clean` | Remove deployment and build artifacts |
+| `make clean-all` | Remove everything including namespace |
+
+### Configuration Variables
+
+Override defaults via environment or command line:
+
+```bash
+# Custom namespace
+make build NAMESPACE=my-namespace
+
+# Custom remote host
+make deploy REMOTE_HOST=my-cluster SSH_USER=admin
+
+# All customizations
+make all \
+  NAMESPACE=cert-dashboard \
+  REMOTE_HOST=bastion.example.com \
+  SSH_USER=root \
+  REMOTE_BASE_DIR=/opt/certsuite \
+  REPORT_DIR=/var/reports
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NAMESPACE` | `operator-dashboard` | OpenShift namespace |
+| `APP_NAME` | `operator-test-dashboard` | Application name |
+| `IMAGE_TAG` | `latest` | Image tag |
+| `REMOTE_HOST` | `rdu2` | SSH target host |
+| `SSH_USER` | `root` | SSH username |
+| `REMOTE_BASE_DIR` | `/root/test-rose/certsuite` | Certsuite directory |
+| `REPORT_DIR` | `/var/www/html` | Reports directory |
+| `SSH_KEY_PATH` | (required for setup) | Path to SSH private key |
 
 ---
 
@@ -158,20 +242,20 @@ kubectl port-forward svc/operator-dashboard 5001:5001 -n operator-dashboard
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `REMOTE_HOST` | SSH host for the remote cluster | `rdu2` |
-| `SSH_USER` | SSH username | (none) |
-| `SSH_KEY_PATH` | Path to SSH private key | (none) |
-| `REMOTE_BASE_DIR` | Directory where certsuite is installed | `/root/test-rose/certsuite` |
-| `REPORT_DIR` | Directory where reports are stored | `/var/www/html` |
-| `DASHBOARD_PORT` | Port for the web dashboard | `5001` |
-| `DEBUG` | Enable debug mode | `false` |
-| `LOG_DIR` | Directory for log files | `/app/logs` |
-| `REDHAT_CATALOG_INDEX` | Red Hat operator catalog index | `registry.redhat.io/redhat/redhat-operator-index:v4.20` |
-| `CERTIFIED_CATALOG_INDEX` | Certified operator catalog index | `registry.redhat.io/redhat/certified-operator-index:v4.20` |
-| `REDHAT_OPERATORS` | Comma-separated list of Red Hat operators | (defaults in code) |
-| `CERTIFIED_OPERATORS` | Comma-separated list of certified operators | (defaults in code) |
+| Variable                  | Description                                 | Default                                                    |
+| ------------------------- | ------------------------------------------- | ---------------------------------------------------------- |
+| `REMOTE_HOST`             | SSH host for the remote cluster             | `rdu2`                                                     |
+| `SSH_USER`                | SSH username                                | (none)                                                     |
+| `SSH_KEY_PATH`            | Path to SSH private key                     | (none)                                                     |
+| `REMOTE_BASE_DIR`         | Directory where certsuite is installed      | `/root/test-rose/certsuite`                                |
+| `REPORT_DIR`              | Directory where reports are stored          | `/var/www/html`                                            |
+| `DASHBOARD_PORT`          | Port for the web dashboard                  | `5001`                                                     |
+| `DEBUG`                   | Enable debug mode                           | `false`                                                    |
+| `LOG_DIR`                 | Directory for log files                     | `/app/logs`                                                |
+| `REDHAT_CATALOG_INDEX`    | Red Hat operator catalog index              | `registry.redhat.io/redhat/redhat-operator-index:v4.20`    |
+| `CERTIFIED_CATALOG_INDEX` | Certified operator catalog index            | `registry.redhat.io/redhat/certified-operator-index:v4.20` |
+| `REDHAT_OPERATORS`        | Comma-separated list of Red Hat operators   | (defaults in code)                                         |
+| `CERTIFIED_OPERATORS`     | Comma-separated list of certified operators | (defaults in code)                                         |
 
 ### Helm Values
 

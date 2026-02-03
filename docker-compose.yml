@@ -1,7 +1,7 @@
 # Docker Compose for local development
 # Usage: docker-compose up -d
 
-version: '3.8'
+version: "3.8"
 
 services:
   dashboard:

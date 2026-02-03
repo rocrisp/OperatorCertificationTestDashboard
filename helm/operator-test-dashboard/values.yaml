@@ -89,22 +89,22 @@ affinity: {}
 config:
   # Remote host to SSH into (the OpenShift bastion/jumphost)
   remoteHost: "rdu2"
-  
+
   # SSH user (leave empty to use default)
   sshUser: ""
-  
+
   # Base directory on remote host where certsuite is installed
   remoteBaseDir: "/root/test-rose/certsuite"
-  
+
   # Directory where test reports are stored
   reportDir: "/var/www/html"
-  
+
   # Dashboard port
   port: 5001
-  
+
   # Enable debug mode
   debug: false
-  
+
   # Catalog indexes
   catalogs:
     redhat:
