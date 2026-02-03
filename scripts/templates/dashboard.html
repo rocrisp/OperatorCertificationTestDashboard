@@ -446,6 +446,38 @@
         </div>
     </div>
 
+    <!-- Cleanup Confirmation Modal -->
+    <div id="cleanup-modal" class="modal-overlay" onclick="closeCleanupModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Confirm Cleanup</h2>
+                <button class="modal-close" onclick="closeCleanupModal()">&times;</button>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <p style="color: #f59e0b; font-weight: 500; margin-bottom: 1rem;">
+                    ⚠️ This action will remove all test resources from the cluster.
+                </p>
+                <p style="color: #888; margin-bottom: 0.75rem;">The following will be cleaned up:</p>
+                <ul style="color: #ccc; margin-left: 1.5rem; line-height: 1.8;">
+                    <li>All operator <strong>Subscriptions</strong> created during testing</li>
+                    <li>All <strong>ClusterServiceVersions (CSVs)</strong> for test operators</li>
+                    <li>All <strong>InstallPlans</strong> in test namespaces</li>
+                    <li>All <strong>test namespaces</strong> (cnf-certsuite-*)</li>
+                    <li>All <strong>CatalogSources</strong> created for testing</li>
+                    <li>Any <strong>leftover pods</strong> from test operators</li>
+                </ul>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-danger" onclick="confirmCleanup()" style="flex: 1;">
+                    Yes, Clean Up
+                </button>
+                <button class="btn btn-primary" onclick="closeCleanupModal()" style="flex: 1;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="header">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
@@ -501,7 +533,7 @@
                 <div class="btn-group">
                     <button class="btn btn-primary" id="btn-start" onclick="openTestConfigModal()">Start Test</button>
                     <button class="btn btn-danger" id="btn-stop" onclick="stopTest()">Stop Test</button>
-                    <button class="btn btn-warning" id="btn-cleanup" onclick="cleanupCluster()">Cleanup</button>
+                    <button class="btn btn-warning" id="btn-cleanup" onclick="openCleanupModal()">Cleanup</button>
                 </div>
             </div>
 
@@ -905,16 +937,28 @@
             }
         }
 
-        async function cleanupCluster() {
-            if (!confirm('Clean up all test operators? This will remove all subscriptions, CSVs, and test resources.')) return;
+        function openCleanupModal() {
+            document.getElementById('cleanup-modal').style.display = 'flex';
+        }
 
+        function closeCleanupModal(event) {
+            if (!event || event.target.classList.contains('modal-overlay')) {
+                document.getElementById('cleanup-modal').style.display = 'none';
+            }
+        }
+
+        async function confirmCleanup() {
+            // Close the modal
+            document.getElementById('cleanup-modal').style.display = 'none';
+            
+            // Update button state
             document.getElementById('btn-cleanup').disabled = true;
             document.getElementById('btn-cleanup').textContent = 'Cleaning...';
 
             try {
                 const res = await fetch('/api/cleanup', { method: 'POST' });
                 const data = await res.json();
-                showAlert('Cleanup complete', 'success');
+                showAlert('Cleanup complete! All test resources have been removed.', 'success');
                 fetchStatus();
             } catch (e) {
                 showAlert('Cleanup failed', 'error');
