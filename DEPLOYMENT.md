@@ -46,20 +46,20 @@ make all
 
 ### Available Make Targets
 
-| Target | Description |
-|--------|-------------|
-| `make help` | Show all available targets |
-| `make setup` | Create namespace, SSH secret, ImageStream, BuildConfig |
-| `make build` | Build the application using OpenShift binary build |
-| `make deploy` | Deploy using Helm with ImageStream |
-| `make all` | Build and deploy |
-| `make rebuild` | Rebuild and redeploy |
-| `make status` | Show deployment status |
-| `make logs` | Show application logs |
-| `make get-route` | Get the dashboard URL |
-| `make port-forward` | Port-forward to localhost:5001 |
-| `make clean` | Remove deployment and build artifacts |
-| `make clean-all` | Remove everything including namespace |
+| Target              | Description                                            |
+| ------------------- | ------------------------------------------------------ |
+| `make help`         | Show all available targets                             |
+| `make setup`        | Create namespace, SSH secret, ImageStream, BuildConfig |
+| `make build`        | Build the application using OpenShift binary build     |
+| `make deploy`       | Deploy using Helm with ImageStream                     |
+| `make all`          | Build and deploy                                       |
+| `make rebuild`      | Rebuild and redeploy                                   |
+| `make status`       | Show deployment status                                 |
+| `make logs`         | Show application logs                                  |
+| `make get-route`    | Get the dashboard URL                                  |
+| `make port-forward` | Port-forward to localhost:5001                         |
+| `make clean`        | Remove deployment and build artifacts                  |
+| `make clean-all`    | Remove everything including namespace                  |
 
 ### Configuration Variables
 
@@ -81,16 +81,16 @@ make all \
   REPORT_DIR=/var/reports
 ```
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NAMESPACE` | `operator-dashboard` | OpenShift namespace |
-| `APP_NAME` | `operator-test-dashboard` | Application name |
-| `IMAGE_TAG` | `latest` | Image tag |
-| `REMOTE_HOST` | `rdu2` | SSH target host |
-| `SSH_USER` | `root` | SSH username |
-| `REMOTE_BASE_DIR` | `/root/test-rose/certsuite` | Certsuite directory |
-| `REPORT_DIR` | `/var/www/html` | Reports directory |
-| `SSH_KEY_PATH` | (required for setup) | Path to SSH private key |
+| Variable          | Default                     | Description             |
+| ----------------- | --------------------------- | ----------------------- |
+| `NAMESPACE`       | `operator-dashboard`        | OpenShift namespace     |
+| `APP_NAME`        | `operator-test-dashboard`   | Application name        |
+| `IMAGE_TAG`       | `latest`                    | Image tag               |
+| `REMOTE_HOST`     | `rdu2`                      | SSH target host         |
+| `SSH_USER`        | `root`                      | SSH username            |
+| `REMOTE_BASE_DIR` | `/root/test-rose/certsuite` | Certsuite directory     |
+| `REPORT_DIR`      | `/var/www/html`             | Reports directory       |
+| `SSH_KEY_PATH`    | (required for setup)        | Path to SSH private key |
 
 ---
 

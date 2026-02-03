@@ -268,7 +268,7 @@ def get_test_config():
         certified_operators = [op.strip() for op in certified_operators_env.split(',') if op.strip()]
     else:
         certified_operators = [
-            "sriov-fec", "cloud-native-postgresql", "mongodb-enterprise", "vault-secrets-operator"
+            "sriov-fec", "crunchy-postgres-operator","cloud-native-postgresql", "mongodb-enterprise", "vault-secrets-operator"
         ]
     
     return jsonify({
@@ -302,19 +302,24 @@ def start_test():
     
     if 'catalogs' in data and data['catalogs']:
         # Build custom test script
-        commands = []
+        commands = ['#!/bin/bash', 'set -e']  # Add shebang and exit on error
         for catalog in data['catalogs']:
             if catalog.get('operators'):
                 operators_str = ' '.join(catalog['operators'])
                 index = catalog.get('index', 'registry.redhat.io/redhat/redhat-operator-index:v4.20')
+                # Quotes are preserved by heredoc
                 commands.append(f'time ./script/run-basic-batch-operators-test.sh {index} "{operators_str}"')
         
-        if commands:
-            # Create a temporary test script
-            script_content = '\\n'.join(commands)
-            ssh_command(f'echo -e "{script_content}" > {REMOTE_BASE_DIR}/run-custom-test.sh && chmod +x {REMOTE_BASE_DIR}/run-custom-test.sh')
+        if len(commands) > 2:  # More than just shebang and set -e
+            # Create a temporary test script using heredoc to preserve quotes
+            script_lines = '\n'.join(commands)
+            create_script_cmd = f'''cat > {REMOTE_BASE_DIR}/run-custom-test.sh << 'EOFSCRIPT'
+{script_lines}
+EOFSCRIPT
+chmod +x {REMOTE_BASE_DIR}/run-custom-test.sh'''
+            ssh_command(create_script_cmd)
             ssh_command(f'tmux new-session -d -s operator-test "cd {REMOTE_BASE_DIR} && ./run-custom-test.sh"')
-            logger.info(f"Custom test started with {len(commands)} catalog(s)")
+            logger.info(f"Custom test started with {len(commands) - 2} catalog(s)")
         else:
             return jsonify({'error': 'No operators specified'}), 400
     else:
