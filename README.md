@@ -9,14 +9,15 @@
 ## 📋 Table of Contents
 
 1. [Overview](#overview)
-2. [Directory Structure](#directory-structure)
-3. [Installation](#installation)
-4. [Dashboard Options](#dashboard-options)
-5. [Quick Start](#quick-start)
-6. [Features](#features)
-7. [Usage Guide](#usage-guide)
-8. [Troubleshooting](#troubleshooting)
-9. [Advanced Configuration](#advanced-configuration)
+2. [macOS Quick Start](#-macos-quick-start)
+3. [Directory Structure](#directory-structure)
+4. [Installation](#installation)
+5. [Dashboard Options](#dashboard-options)
+6. [Quick Start](#quick-start)
+7. [Features](#features)
+8. [Usage Guide](#usage-guide)
+9. [Troubleshooting](#troubleshooting)
+10. [Advanced Configuration](#advanced-configuration)
 
 ---
 
@@ -33,6 +34,38 @@ This dashboard provides a unified interface for managing operator certification 
 - ✅ **Results Analysis** - Comprehensive test results and comparisons
 - ✅ **Quick Fixes** - Manual interventions for common issues
 - ✅ **Script Management** - Sync and update remote scripts
+
+---
+
+## 🍎 macOS Quick Start
+
+Get the web dashboard running in under 2 minutes:
+
+```bash
+# 1. Clone the repository (if you haven't already)
+git clone https://github.com/rocrisp/OperatorCertificationTestDashboard.git
+cd OperatorCertificationTestDashboard
+
+# 2. Create and activate a Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Start the web dashboard
+./scripts/web-dashboard.py
+
+# 5. Open in browser
+# Navigate to: http://localhost:5001
+```
+
+**Note:** On macOS, you must use a virtual environment because the system Python is externally managed. Each time you open a new terminal, activate the venv first:
+```bash
+cd ~/OperatorCertificationTestDashboard
+source venv/bin/activate
+./scripts/web-dashboard.py
+```
 
 ---
 
