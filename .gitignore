@@ -28,3 +28,16 @@ Thumbs.db
 # Results and backups
 results/
 backups/
+
+# Docker
+.docker/
+
+# Helm
+helm/operator-test-dashboard/charts/
+*.tgz
+
+# Secrets (never commit these!)
+*.pem
+*.key
+id_rsa*
+ssh_key*

@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "operator-test-dashboard.fullname" . }}-config
+  labels:
+    {{- include "operator-test-dashboard.labels" . | nindent 4 }}
+data:
+  REMOTE_HOST: {{ .Values.config.remoteHost | quote }}
+  REMOTE_BASE_DIR: {{ .Values.config.remoteBaseDir | quote }}
+  REPORT_DIR: {{ .Values.config.reportDir | quote }}
+  DASHBOARD_PORT: {{ .Values.config.port | quote }}
+  DEBUG: {{ .Values.config.debug | quote }}
+  LOG_DIR: "/app/logs"
+  {{- if .Values.config.sshUser }}
+  SSH_USER: {{ .Values.config.sshUser | quote }}
+  {{- end }}
+  REDHAT_CATALOG_INDEX: {{ .Values.config.catalogs.redhat.index | quote }}
+  CERTIFIED_CATALOG_INDEX: {{ .Values.config.catalogs.certified.index | quote }}
+  {{- if .Values.config.catalogs.redhat.operators }}
+  REDHAT_OPERATORS: {{ .Values.config.catalogs.redhat.operators | quote }}
+  {{- end }}
+  {{- if .Values.config.catalogs.certified.operators }}
+  CERTIFIED_OPERATORS: {{ .Values.config.catalogs.certified.operators | quote }}
+  {{- end }}

@@ -1,0 +1,17 @@
+apiVersion: v2
+name: operator-test-dashboard
+description: A Helm chart for deploying the Operator Certification Test Dashboard
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - operator
+  - certification
+  - testing
+  - dashboard
+  - openshift
+maintainers:
+  - name: CNF Certification Team
+home: https://github.com/rocrisp/OperatorCertificationTestDashboard
+sources:
+  - https://github.com/rocrisp/OperatorCertificationTestDashboard

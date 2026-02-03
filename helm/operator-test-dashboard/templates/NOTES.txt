@@ -1,0 +1,48 @@
+🎉 Operator Certification Test Dashboard has been deployed!
+
+{{- if .Values.ingress.enabled }}
+Access the dashboard at:
+{{- range $host := .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
+{{- end }}
+{{- else if .Values.route.enabled }}
+Access the dashboard at the OpenShift Route:
+  oc get route {{ include "operator-test-dashboard.fullname" . }} -o jsonpath='{.spec.host}'
+{{- else if contains "NodePort" .Values.service.type }}
+Get the NodePort URL:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "operator-test-dashboard.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "LoadBalancer" .Values.service.type }}
+Get the LoadBalancer IP:
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  kubectl get --namespace {{ .Release.Namespace }} svc {{ include "operator-test-dashboard.fullname" . }} -w
+{{- else if contains "ClusterIP" .Values.service.type }}
+Access the dashboard using port-forward:
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "operator-test-dashboard.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+  
+Then open: http://localhost:{{ .Values.service.port }}
+{{- end }}
+
+📋 Configuration:
+  Remote Host: {{ .Values.config.remoteHost }}
+  Remote Base Dir: {{ .Values.config.remoteBaseDir }}
+  Report Dir: {{ .Values.config.reportDir }}
+
+{{- if not (or .Values.sshKey.create .Values.sshKey.existingSecret) }}
+
+⚠️  WARNING: No SSH key configured!
+The dashboard needs SSH access to the remote host. Please configure SSH key:
+
+  1. Create a secret with your SSH private key:
+     kubectl create secret generic {{ include "operator-test-dashboard.fullname" . }}-ssh-key \
+       --from-file=id_rsa=/path/to/your/private/key \
+       --namespace {{ .Release.Namespace }}
+
+  2. Update the Helm release with the existing secret:
+     helm upgrade {{ .Release.Name }} ./helm/operator-test-dashboard \
+       --set sshKey.existingSecret={{ include "operator-test-dashboard.fullname" . }}-ssh-key
+
+{{- end }}
+
+📖 Documentation: https://github.com/rocrisp/OperatorCertificationTestDashboard

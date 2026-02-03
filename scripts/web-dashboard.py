@@ -16,12 +16,20 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Configuration from environment variables
 REMOTE_HOST = os.environ.get('REMOTE_HOST', 'rdu2')
-REMOTE_BASE_DIR = '/root/test-rose/certsuite'
-REPORT_DIR = '/var/www/html'  # Where report_* directories are created
+REMOTE_BASE_DIR = os.environ.get('REMOTE_BASE_DIR', '/root/test-rose/certsuite')
+REPORT_DIR = os.environ.get('REPORT_DIR', '/var/www/html')
+DASHBOARD_PORT = int(os.environ.get('DASHBOARD_PORT', '5001'))
+SSH_KEY_PATH = os.environ.get('SSH_KEY_PATH', '')  # Optional: path to SSH private key
+SSH_USER = os.environ.get('SSH_USER', '')  # Optional: SSH username
+
+# Catalog configuration from environment (JSON string) or defaults
+REDHAT_CATALOG_INDEX = os.environ.get('REDHAT_CATALOG_INDEX', 'registry.redhat.io/redhat/redhat-operator-index:v4.20')
+CERTIFIED_CATALOG_INDEX = os.environ.get('CERTIFIED_CATALOG_INDEX', 'registry.redhat.io/redhat/certified-operator-index:v4.20')
 
 # Setup logging
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+LOG_DIR = os.environ.get('LOG_DIR', os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs'))
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, 'dashboard.log')
 
@@ -58,8 +66,23 @@ def ssh_command(cmd, log_cmd=False, timeout=30):
     try:
         if log_cmd:
             logger.debug(f"SSH command: {cmd[:100]}...")
+        
+        # Build SSH command with optional key and user
+        ssh_cmd = ['ssh']
+        if SSH_KEY_PATH:
+            ssh_cmd.extend(['-i', SSH_KEY_PATH])
+        ssh_cmd.extend(['-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null'])
+        
+        # Add user@host or just host
+        if SSH_USER:
+            ssh_cmd.append(f'{SSH_USER}@{REMOTE_HOST}')
+        else:
+            ssh_cmd.append(REMOTE_HOST)
+        
+        ssh_cmd.append(cmd)
+        
         result = subprocess.run(
-            ['ssh', REMOTE_HOST, cmd],
+            ssh_cmd,
             capture_output=True,
             text=True,
             timeout=timeout
@@ -216,38 +239,48 @@ def get_latest_results():
 @app.route('/api/test/config')
 def get_test_config():
     """Get current test configuration"""
-    # Default operator lists
-    redhat_operators = [
-        "lvms-operator+", "odf-operator+", "ocs-operator+", "advanced-cluster-management+",
-        "multicluster-engine+", "topology-aware-lifecycle-manager", "sriov-network-operator",
-        "local-storage-operator", "cluster-logging", "compliance-operator", "odf-csi-addons-operator",
-        "cincinnati-operator", "nfd", "ptp-operator", "rhsso-operator", "file-integrity-operator",
-        "mcg-operator", "openshift-cert-manager-operator", "openshift-gitops-operator",
-        "quay-operator", "servicemeshoperator3", "metallb-operator", "kubevirt-hyperconverged",
-        "gatekeeper-operator-product", "ansible-automation-platform-operator", "mtc-operator",
-        "redhat-oadp-operator", "openshift-pipelines-operator-rh", "kiali-ossm",
-        "kubernetes-nmstate-operator", "rhacs-operator", "kernel-module-management-hub",
-        "kernel-module-management", "mta-operator", "loki-operator", "amq-broker-rhel8",
-        "amq-streams", "amq7-interconnect-operator", "lifecycle-agent", "numaresources-operator",
-        "volsync-product", "rhbk-operator", "cluster-observability-operator",
-        "openshift-custom-metrics-autoscaler-operator", "node-healthcheck-operator",
-        "self-node-remediation", "tempo-product"
-    ]
+    # Load operator lists from environment or use defaults
+    redhat_operators_env = os.environ.get('REDHAT_OPERATORS', '')
+    certified_operators_env = os.environ.get('CERTIFIED_OPERATORS', '')
     
-    certified_operators = [
-        "sriov-fec", "crunchy-postgres-operator","cloud-native-postgresql", "mongodb-enterprise", "vault-secrets-operator"
-    ]
+    if redhat_operators_env:
+        redhat_operators = [op.strip() for op in redhat_operators_env.split(',') if op.strip()]
+    else:
+        # Default operator list
+        redhat_operators = [
+            "lvms-operator+", "odf-operator+", "ocs-operator+", "advanced-cluster-management+",
+            "multicluster-engine+", "topology-aware-lifecycle-manager", "sriov-network-operator",
+            "local-storage-operator", "cluster-logging", "compliance-operator", "odf-csi-addons-operator",
+            "cincinnati-operator", "nfd", "ptp-operator", "rhsso-operator", "file-integrity-operator",
+            "mcg-operator", "openshift-cert-manager-operator", "openshift-gitops-operator",
+            "quay-operator", "servicemeshoperator3", "metallb-operator", "kubevirt-hyperconverged",
+            "gatekeeper-operator-product", "ansible-automation-platform-operator", "mtc-operator",
+            "redhat-oadp-operator", "openshift-pipelines-operator-rh", "kiali-ossm",
+            "kubernetes-nmstate-operator", "rhacs-operator", "kernel-module-management-hub",
+            "kernel-module-management", "mta-operator", "loki-operator", "amq-broker-rhel8",
+            "amq-streams", "amq7-interconnect-operator", "lifecycle-agent", "numaresources-operator",
+            "volsync-product", "rhbk-operator", "cluster-observability-operator",
+            "openshift-custom-metrics-autoscaler-operator", "node-healthcheck-operator",
+            "self-node-remediation", "tempo-product"
+        ]
+    
+    if certified_operators_env:
+        certified_operators = [op.strip() for op in certified_operators_env.split(',') if op.strip()]
+    else:
+        certified_operators = [
+            "sriov-fec", "cloud-native-postgresql", "mongodb-enterprise", "vault-secrets-operator"
+        ]
     
     return jsonify({
         'catalogs': [
             {
                 'name': 'Red Hat Operators',
-                'index': 'registry.redhat.io/redhat/redhat-operator-index:v4.20',
+                'index': REDHAT_CATALOG_INDEX,
                 'operators': redhat_operators
             },
             {
                 'name': 'Certified Operators', 
-                'index': 'registry.redhat.io/redhat/certified-operator-index:v4.20',
+                'index': CERTIFIED_CATALOG_INDEX,
                 'operators': certified_operators
             }
         ]
@@ -544,4 +577,5 @@ def download_combined_csv():
     )
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    debug_mode = os.environ.get('DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=DASHBOARD_PORT, debug=debug_mode)
