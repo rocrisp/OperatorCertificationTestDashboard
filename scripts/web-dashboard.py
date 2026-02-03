@@ -423,9 +423,10 @@ def list_reports():
     for report_name in report_names:
         report_dir = f"{REPORT_DIR}/{report_name}"
         
-        # Get total operators from operator-list.txt (filter empty lines)
-        total_raw = ssh_command(f'grep -c "." "{report_dir}/operator-list.txt" 2>/dev/null || echo 0')
-        total = safe_int(total_raw)
+        # Get total tested operators by counting subdirectories (matches View modal)
+        # This counts operators that actually ran, not just planned
+        total_raw = ssh_command(f'find "{report_dir}" -maxdepth 1 -type d | wc -l')
+        total = max(0, safe_int(total_raw) - 1)  # Subtract 1 for parent dir
         
         # Get installed count from log
         log_file = ssh_command(f'ls -t "{report_dir}"/output_*.log 2>/dev/null | head -1').strip()
