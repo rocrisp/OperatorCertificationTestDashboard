@@ -170,8 +170,8 @@ def get_status():
             except:
                 start_time = ''
             
-            # Get total operators from operator-list.txt
-            total_raw = ssh_command(f'wc -l < "{latest_report_dir}/operator-list.txt" 2>/dev/null || echo 0')
+            # Get total operators from operator-list.txt (filter empty lines)
+            total_raw = ssh_command(f'grep -c "." "{latest_report_dir}/operator-list.txt" 2>/dev/null || echo 0')
             tests_total = safe_int(total_raw)
             
             # Count completed tests by counting subdirectories (each operator gets a folder)
