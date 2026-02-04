@@ -28,6 +28,9 @@ SSH_USER = os.environ.get('SSH_USER', '')  # Optional: SSH username
 REDHAT_CATALOG_INDEX = os.environ.get('REDHAT_CATALOG_INDEX', 'registry.redhat.io/redhat/redhat-operator-index:v4.20')
 CERTIFIED_CATALOG_INDEX = os.environ.get('CERTIFIED_CATALOG_INDEX', 'registry.redhat.io/redhat/certified-operator-index:v4.20')
 
+# Demo mode - use mock data instead of SSH
+DEMO_MODE = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
+
 # Setup logging
 LOG_DIR = os.environ.get('LOG_DIR', os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs'))
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -59,7 +62,152 @@ logger.info("=" * 60)
 logger.info("Dashboard started")
 logger.info(f"Log file: {LOG_FILE}")
 logger.info(f"Remote host: {REMOTE_HOST}")
+logger.info(f"Demo mode: {DEMO_MODE}")
 logger.info("=" * 60)
+
+# ============== DEMO MODE DATA ==============
+# Sample data for demonstration when remote host is not available
+import random
+from datetime import timedelta
+
+DEMO_OPERATORS = [
+    'cluster-logging', 'elasticsearch-operator', 'kiali-ossm', 'jaeger-product',
+    'servicemeshoperator', 'openshift-gitops-operator', 'web-terminal', 
+    'advanced-cluster-management', 'multicluster-engine', 'openshift-pipelines-operator-rh',
+    'rhods-operator', 'nfd', 'nvidia-gpu-operator', 'local-storage-operator',
+    'ocs-operator', 'odf-operator', 'metallb-operator', 'cert-manager-operator'
+]
+
+DEMO_REPORTS = [
+    {'name': 'report_2026-02-03_14-30-00_EST', 'total': 47, 'installed': 45, 'failed': 2},
+    {'name': 'report_2026-02-02_10-15-00_EST', 'total': 51, 'installed': 51, 'failed': 0},
+    {'name': 'report_2026-02-01_16-45-00_EST', 'total': 38, 'installed': 36, 'failed': 2},
+    {'name': 'report_2026-01-31_09-00-00_EST', 'total': 42, 'installed': 40, 'failed': 2},
+    {'name': 'report_2026-01-30_14-20-00_EST', 'total': 55, 'installed': 55, 'failed': 0},
+    {'name': 'report_2026-01-29_11-30-00_EST', 'total': 33, 'installed': 31, 'failed': 2},
+    {'name': 'report_2026-01-28_15-45-00_EST', 'total': 48, 'installed': 47, 'failed': 1},
+    {'name': 'report_2026-01-27_08-30-00_EST', 'total': 44, 'installed': 42, 'failed': 2},
+    {'name': 'report_2026-01-26_13-00-00_EST', 'total': 50, 'installed': 50, 'failed': 0},
+    {'name': 'report_2026-01-25_10-45-00_EST', 'total': 39, 'installed': 37, 'failed': 2},
+]
+
+# Simulated test state for demo
+demo_test_state = {
+    'running': True,
+    'start_time': datetime.now() - timedelta(minutes=random.randint(5, 45)),
+    'current_index': random.randint(5, 15),
+    'total': 20
+}
+
+def get_demo_status():
+    """Return demo status data"""
+    elapsed = datetime.now() - demo_test_state['start_time']
+    # Simulate progress
+    progress_rate = elapsed.total_seconds() / 180  # ~3 min per operator
+    current_idx = min(int(progress_rate) + 5, demo_test_state['total'])
+    
+    return {
+        'running': demo_test_state['running'],
+        'current_operator': DEMO_OPERATORS[current_idx % len(DEMO_OPERATORS)] if demo_test_state['running'] else None,
+        'total': demo_test_state['total'],
+        'completed': current_idx,
+        'installed': current_idx - 1,
+        'remaining': max(0, demo_test_state['total'] - current_idx),
+        'start_time': demo_test_state['start_time'].strftime('%Y-%m-%dT%H:%M:%S'),
+        'report_name': f"report_{demo_test_state['start_time'].strftime('%Y-%m-%d_%H-%M-%S')}_EST"
+    }
+
+def get_demo_live_output():
+    """Return demo live output"""
+    current = get_demo_status()
+    op = current['current_operator'] or 'cluster-logging'
+    output_lines = [
+        "=" * 60,
+        f"Operator Certification Test Suite - Demo Mode",
+        "=" * 60,
+        "",
+        f"Testing operator: {op}",
+        f"  package= {op}",
+        "",
+        "Installing operator...",
+        f"  subscription.operators.coreos.com/{op} created",
+        "  Waiting for CSV to be ready...",
+        f"  operator {op} installed successfully",
+        "",
+        "Running certsuite tests...",
+        "  [INFO] Running test: operator-install",
+        "  [PASS] operator-install",
+        "  [INFO] Running test: operator-crd-versioning",
+        "  [PASS] operator-crd-versioning", 
+        "  [INFO] Running test: operator-crd-openapi-schema",
+        "  [PASS] operator-crd-openapi-schema",
+        "  [INFO] Running test: operator-olm-subscription",
+        "  [PASS] operator-olm-subscription",
+        "",
+        f"Progress: {current['completed']}/{current['total']} operators completed",
+        f"Elapsed: {(datetime.now() - demo_test_state['start_time']).seconds // 60} minutes",
+        "",
+        "=" * 60,
+    ]
+    return '\n'.join(output_lines)
+
+def get_demo_reports(limit=10):
+    """Return demo reports data"""
+    reports = []
+    for r in DEMO_REPORTS[:limit]:
+        date_str = r['name'].replace('report_', '')
+        reports.append({
+            'name': r['name'],
+            'path': f"/var/www/html/{r['name']}",
+            'date': date_str,
+            'total': r['total'],
+            'installed': r['installed'],
+            'failed': r['failed']
+        })
+    return reports
+
+def get_demo_report_summary(report_name):
+    """Return demo report summary"""
+    # Find matching report or use defaults
+    report_data = next((r for r in DEMO_REPORTS if r['name'] == report_name), DEMO_REPORTS[0])
+    
+    total = report_data['total']
+    installed = report_data['installed']
+    failed = report_data['failed']
+    
+    # Generate operator lists
+    all_ops = DEMO_OPERATORS * 3  # Expand list
+    random.seed(hash(report_name))  # Consistent results per report
+    tested_ops = random.sample(all_ops, min(total, len(all_ops)))
+    installed_ops = tested_ops[:installed]
+    failed_ops = tested_ops[installed:installed+failed] if failed > 0 else []
+    other_ops = tested_ops[installed+failed:]
+    
+    return {
+        'report_name': report_name,
+        'tested': len(tested_ops),
+        'installed': len(installed_ops),
+        'failed': len(failed_ops),
+        'other': len(other_ops),
+        'tested_operators': tested_ops,
+        'installed_operators': installed_ops,
+        'failed_operators': failed_ops,
+        'other_operators': other_ops
+    }
+
+def get_demo_csv(report_name):
+    """Return demo CSV data"""
+    summary = get_demo_report_summary(report_name)
+    lines = ['operator,status,install_time,test_result']
+    for op in summary['installed_operators']:
+        lines.append(f'{op},installed,45s,PASS')
+    for op in summary['failed_operators']:
+        lines.append(f'{op},failed,0s,FAIL')
+    for op in summary['other_operators']:
+        lines.append(f'{op},unknown,0s,SKIP')
+    return '\n'.join(lines)
+
+# ============== END DEMO MODE DATA ==============
 
 def ssh_command(cmd, log_cmd=False, timeout=30):
     """Execute SSH command and return output"""
@@ -119,6 +267,10 @@ def index():
 @app.route('/api/status')
 def get_status():
     """Get current test status"""
+    # Return demo data if in demo mode
+    if DEMO_MODE:
+        return jsonify(get_demo_status())
+    
     # Check if test is running
     is_running = ssh_command('tmux has-session -t operator-test 2>/dev/null && echo "true" || echo "false"').strip() == 'true'
     
@@ -297,6 +449,14 @@ def start_test():
     """Start test execution with optional custom configuration"""
     logger.info(">>> TEST START requested")
     
+    if DEMO_MODE:
+        # Reset demo test state to simulate a new test starting
+        demo_test_state['running'] = True
+        demo_test_state['start_time'] = datetime.now()
+        demo_test_state['current_index'] = 0
+        logger.info("Demo mode: Simulated test start")
+        return jsonify({'status': 'Test started (demo mode)', 'message': 'Demo test simulation started'})
+    
     # Check if already running
     is_running = ssh_command('tmux has-session -t operator-test 2>/dev/null && echo "true" || echo "false"').strip() == 'true'
     if is_running:
@@ -339,6 +499,12 @@ chmod +x {REMOTE_BASE_DIR}/run-custom-test.sh'''
 def stop_test():
     """Stop test execution"""
     logger.info(">>> TEST STOP requested")
+    
+    if DEMO_MODE:
+        demo_test_state['running'] = False
+        logger.info("Demo mode: Simulated test stop")
+        return jsonify({'status': 'Test stopped (demo mode)'})
+    
     ssh_command('tmux kill-session -t operator-test 2>/dev/null')
     logger.info("Test stopped")
     return jsonify({'status': 'Test stopped'})
@@ -347,6 +513,10 @@ def stop_test():
 def cleanup_cluster():
     """Clean cluster"""
     logger.info(">>> CLEANUP requested")
+    
+    if DEMO_MODE:
+        logger.info("Demo mode: Simulated cleanup")
+        return jsonify({'status': 'Cleanup completed (demo mode)'})
     logger.info("Starting cluster cleanup...")
     output = ssh_command('bash /tmp/cleanup-all-test-operators-v2.sh')
     logger.info("Cleanup completed")
@@ -355,6 +525,9 @@ def cleanup_cluster():
 @app.route('/api/live-output')
 def get_live_output():
     """Get live test output - capture full scrollback buffer"""
+    if DEMO_MODE:
+        return jsonify({'output': get_demo_live_output()})
+    
     # Use -S - to capture entire scrollback history, then get last 200 lines
     output = ssh_command('tmux capture-pane -t operator-test -p -S - 2>/dev/null | tail -200').strip()
     return jsonify({'output': output})
@@ -421,6 +594,9 @@ def list_reports():
     limit = request.args.get('limit', 10, type=int)
     limit = min(max(limit, 1), 50)  # Clamp between 1 and 50
     
+    if DEMO_MODE:
+        return jsonify({'reports': get_demo_reports(limit)})
+    
     reports_raw = ssh_command(f'ls -td {REPORT_DIR}/report_* 2>/dev/null | head -{limit}')
     report_names = [os.path.basename(r) for r in reports_raw.strip().split('\n') if r]
     
@@ -462,6 +638,9 @@ def get_report_summary():
     
     if not report_name:
         return jsonify({'error': 'Report name required'}), 400
+    
+    if DEMO_MODE:
+        return jsonify(get_demo_report_summary(report_name))
     
     report_dir = f"{REPORT_DIR}/{report_name}"
     
@@ -537,6 +716,16 @@ def download_csv():
     """Download results.csv from the latest or specified report"""
     report_name = request.args.get('report', None)
     
+    if DEMO_MODE:
+        if not report_name:
+            report_name = DEMO_REPORTS[0]['name']
+        csv_content = get_demo_csv(report_name)
+        return Response(
+            csv_content,
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={report_name}_results.csv'}
+        )
+    
     # Get the report directory
     if report_name:
         report_dir = f"{REPORT_DIR}/{report_name}"
@@ -577,6 +766,29 @@ def download_combined_csv():
     """Download combined results.csv from multiple reports"""
     # Get list of reports to combine (comma-separated) or default to latest 5
     reports_param = request.args.get('reports', None)
+    
+    if DEMO_MODE:
+        if reports_param:
+            report_names = reports_param.split(',')
+        else:
+            report_names = [DEMO_REPORTS[0]['name']]
+        
+        combined_csv = []
+        header_added = False
+        for rn in report_names:
+            csv_content = get_demo_csv(rn)
+            lines = csv_content.split('\n')
+            if not header_added:
+                combined_csv.extend(lines)
+                header_added = True
+            else:
+                combined_csv.extend(lines[1:])  # Skip header
+        
+        return Response(
+            '\n'.join(combined_csv),
+            mimetype='text/csv',
+            headers={'Content-Disposition': 'attachment; filename=combined_results.csv'}
+        )
     
     if reports_param:
         report_names = reports_param.split(',')

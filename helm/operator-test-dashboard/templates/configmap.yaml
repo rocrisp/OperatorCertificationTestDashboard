@@ -5,6 +5,7 @@ metadata:
   labels:
     {{- include "operator-test-dashboard.labels" . | nindent 4 }}
 data:
+  DEMO_MODE: {{ .Values.config.demoMode | quote }}
   REMOTE_HOST: {{ .Values.config.remoteHost | quote }}
   REMOTE_BASE_DIR: {{ .Values.config.remoteBaseDir | quote }}
   REPORT_DIR: {{ .Values.config.reportDir | quote }}

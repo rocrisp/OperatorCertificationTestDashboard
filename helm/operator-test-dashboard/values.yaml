@@ -87,6 +87,10 @@ affinity: {}
 
 # Dashboard configuration
 config:
+  # Demo mode - use mock data instead of connecting to remote host
+  # Useful for demos when remote host is not accessible
+  demoMode: false
+
   # Remote host to SSH into (the OpenShift bastion/jumphost)
   remoteHost: "rdu2"
 
