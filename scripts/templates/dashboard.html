@@ -648,6 +648,19 @@
         </div>
     </div>
 
+    <!-- Cluster Info Modal -->
+    <div id="cluster-info-modal" class="modal-overlay" onclick="closeClusterInfoModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Cluster Information</h2>
+                <button class="modal-close" onclick="closeClusterInfoModal()">&times;</button>
+            </div>
+            <div id="cluster-info-content" style="color: #ccc;">
+                <p style="text-align: center; padding: 2rem;">Loading cluster information...</p>
+            </div>
+        </div>
+    </div>
+
     <div class="header">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
@@ -658,7 +671,7 @@
                 <!-- Theme Selector -->
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <label for="theme-select" style="font-size: 0.85rem; opacity: 0.9;">Theme:</label>
-                    <select id="theme-select" onchange="changeTheme(this.value)" 
+                    <select id="theme-select" onchange="changeTheme(this.value)"
                         style="padding: 0.4rem 0.6rem; font-size: 0.85rem; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; cursor: pointer;">
                         <option value="nebula">Nebula</option>
                         <option value="frost">Frost</option>
@@ -721,6 +734,7 @@
                     <button class="btn btn-primary" id="btn-start" onclick="openTestConfigModal()">Start Test</button>
                     <button class="btn btn-danger" id="btn-stop" onclick="stopTest()">Stop Test</button>
                     <button class="btn btn-warning" id="btn-cleanup" onclick="openCleanupModal()">Cleanup</button>
+                    <button class="btn" id="btn-cluster-info" onclick="openClusterInfoModal()" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">Cluster Info</button>
                 </div>
             </div>
 
@@ -754,22 +768,23 @@
             </div>
 
             <div class="card output-card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
                     <h2 style="margin-bottom: 0;">Past Reports</h2>
                     <div style="display: flex; gap: 0.5rem; align-items: center;">
                         <span id="selected-count" style="font-size: 0.8rem; color: #888;"></span>
-                        <button id="btn-download-selected" onclick="downloadSelectedCSVs()" 
+                        <button id="btn-download-selected" onclick="downloadSelectedCSVs()"
                             style="padding: 0.4rem 0.75rem; font-size: 0.8rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; display: none;">
                             Download Selected
                         </button>
-                        <select id="reports-limit" onchange="fetchPastReports()" 
+                        <select id="reports-limit" onchange="fetchPastReports()"
                             style="padding: 0.3rem 0.5rem; font-size: 0.8rem; background: #374151; color: #eee; border: 1px solid #4b5563; border-radius: 4px; cursor: pointer;">
                             <option value="5">Last 5</option>
                             <option value="10" selected>Last 10</option>
                             <option value="20">Last 20</option>
                             <option value="30">Last 30</option>
                         </select>
-                        <button onclick="fetchPastReports()" 
+                        <button onclick="fetchPastReports()"
                             style="padding: 0.3rem 0.6rem; font-size: 0.8rem; background: #374151; color: #eee; border: 1px solid #4b5563; border-radius: 4px; cursor: pointer;"
                             title="Refresh reports list">
                             ↻ Refresh
@@ -781,7 +796,7 @@
                         <thead>
                             <tr style="border-bottom: 1px solid #374151;">
                                 <th style="text-align: center; padding: 0.5rem; width: 40px;">
-                                    <input type="checkbox" id="select-all-reports" onchange="toggleAllReports(this)" 
+                                    <input type="checkbox" id="select-all-reports" onchange="toggleAllReports(this)"
                                         style="cursor: pointer; width: 16px; height: 16px;">
                                 </th>
                                 <th style="text-align: left; padding: 0.5rem; color: #888;">Report</th>
@@ -1163,7 +1178,7 @@
         async function confirmCleanup() {
             // Close the modal
             document.getElementById('cleanup-modal').style.display = 'none';
-            
+
             // Update button state
             document.getElementById('btn-cleanup').disabled = true;
             document.getElementById('btn-cleanup').textContent = 'Cleaning...';
@@ -1178,6 +1193,145 @@
             } finally {
                 document.getElementById('btn-cleanup').disabled = false;
                 document.getElementById('btn-cleanup').textContent = 'Cleanup';
+            }
+        }
+
+        // ========== CLUSTER INFO MODAL ==========
+        async function openClusterInfoModal() {
+            document.getElementById('cluster-info-modal').style.display = 'flex';
+            document.getElementById('cluster-info-content').innerHTML = '<p style="text-align: center; padding: 2rem;">Loading cluster information...</p>';
+            
+            try {
+                const res = await fetch('/api/cluster/info');
+                const data = await res.json();
+                
+                if (data.error) {
+                    document.getElementById('cluster-info-content').innerHTML = `<p style="color: #f87171;">Error: ${data.error}</p>`;
+                    return;
+                }
+                
+                // Build the display
+                let html = `
+                    <div style="display: grid; gap: 1.5rem;">
+                        <!-- Basic Info -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                            <h3 style="margin-bottom: 0.75rem; color: #60a5fa; font-size: 1rem;">Cluster Details</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+                                <div><span style="color: #888;">Version:</span> <strong>${data.version}</strong></div>
+                                <div><span style="color: #888;">Status:</span> <strong style="color: ${data.status === 'connected' ? '#4ade80' : '#f87171'};">${data.status}</strong></div>
+                                <div><span style="color: #888;">User:</span> <strong>${data.user || 'N/A'}</strong></div>
+                                <div><span style="color: #888;">API:</span> <strong style="font-size: 0.8rem;">${data.api_url || 'N/A'}</strong></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Health Status -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                            <h3 style="margin-bottom: 0.75rem; color: #60a5fa; font-size: 1rem;">Nodes</h3>
+                            <div style="font-size: 0.9rem;">
+                                <span style="color: #4ade80;">Ready: ${data.nodes?.ready || 0}</span> / 
+                                <span>Total: ${data.nodes?.total || 0}</span>
+                                ${data.nodes?.not_ready > 0 ? `<span style="color: #f87171; margin-left: 0.5rem;">Not Ready: ${data.nodes.not_ready}</span>` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Catalog Indexes -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                            <h3 style="margin-bottom: 0.75rem; color: #60a5fa; font-size: 1rem;">Catalog Indexes (for testing)</h3>
+                            <div style="font-size: 0.85rem; font-family: monospace;">
+                                <div style="margin-bottom: 0.3rem;"><span style="color: #888;">Red Hat:</span> ${data.redhat_catalog}</div>
+                                <div><span style="color: #888;">Certified:</span> ${data.certified_catalog}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Catalog Sources -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                            <h3 style="margin-bottom: 0.75rem; color: #60a5fa; font-size: 1rem;">Catalog Sources (openshift-marketplace)</h3>
+                            <div style="font-size: 0.85rem;">
+                                ${data.catalog_sources && data.catalog_sources.length > 0 
+                                    ? data.catalog_sources.map(cs => `
+                                        <div style="display: flex; justify-content: space-between; padding: 0.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                            <span>${cs.name}</span>
+                                            <span style="color: ${cs.status === 'READY' ? '#4ade80' : '#fbbf24'};">${cs.status}</span>
+                                        </div>
+                                    `).join('')
+                                    : '<span style="color: #888;">No catalog sources found</span>'
+                                }
+                            </div>
+                        </div>
+                        
+                        <!-- Installed Operators -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                            <h3 style="margin-bottom: 0.75rem; color: #60a5fa; font-size: 1rem;">
+                                Installed Operators (CSVs)
+                                <span style="font-weight: normal; color: #888; margin-left: 0.5rem;">
+                                    ${data.installed_operators?.length || 0} found
+                                </span>
+                            </h3>
+                            <div style="max-height: 200px; overflow-y: auto; font-size: 0.85rem;">
+                                ${data.installed_operators && data.installed_operators.length > 0 
+                                    ? `<table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                                <th style="text-align: left; padding: 0.3rem; color: #888;">Namespace</th>
+                                                <th style="text-align: left; padding: 0.3rem; color: #888;">Operator Name</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.installed_operators.map(op => `
+                                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                    <td style="padding: 0.3rem; color: #60a5fa;">${op.namespace}</td>
+                                                    <td style="padding: 0.3rem;">${op.name}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>`
+                                    : '<div style="color: #888; padding: 0.5rem;">No operators installed</div>'
+                                }
+                            </div>
+                        </div>
+                        
+                        <!-- Subscriptions -->
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                            <h3 style="margin-bottom: 0.75rem; color: #60a5fa; font-size: 1rem;">
+                                Subscriptions
+                                <span style="font-weight: normal; color: #888; margin-left: 0.5rem;">
+                                    ${data.subscriptions?.length || 0} found
+                                </span>
+                            </h3>
+                            <div style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;">
+                                ${data.subscriptions && data.subscriptions.length > 0 
+                                    ? `<table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                                <th style="text-align: left; padding: 0.3rem; color: #888;">Namespace</th>
+                                                <th style="text-align: left; padding: 0.3rem; color: #888;">Subscription</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${data.subscriptions.map(sub => `
+                                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                                    <td style="padding: 0.3rem; color: #60a5fa;">${sub.namespace}</td>
+                                                    <td style="padding: 0.3rem;">${sub.name}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>`
+                                    : '<div style="color: #888; padding: 0.5rem;">No subscriptions found</div>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('cluster-info-content').innerHTML = html;
+            } catch (e) {
+                document.getElementById('cluster-info-content').innerHTML = `<p style="color: #f87171;">Failed to load cluster info: ${e.message}</p>`;
+            }
+        }
+        
+        function closeClusterInfoModal(event) {
+            if (!event || event.target.classList.contains('modal-overlay')) {
+                document.getElementById('cluster-info-modal').style.display = 'none';
             }
         }
 
@@ -1228,10 +1382,10 @@
             const tbody = document.getElementById('past-reports-list');
             const limitSelect = document.getElementById('reports-limit');
             const limit = limitSelect ? limitSelect.value : 10;
-            
+
             // Show loading state
             tbody.innerHTML = '<tr><td colspan="6" style="padding: 1rem; color: #888;">Loading reports...</td></tr>';
-            
+
             try {
                 const res = await fetch(`/api/reports?limit=${limit}`);
                 const data = await res.json();
@@ -1243,7 +1397,7 @@
                         const total = report.total || 0;
                         const installed = report.installed || 0;
                         const failed = report.failed || 0;
-                        
+
                         // Parse report name: report_2026-02-03_11-43-57_EST
                         const parts = reportName.replace('report_', '').split('_');
                         const date = parts[0] || '';
@@ -1252,7 +1406,7 @@
 
                         const isLatest = index === 0;
                         const rowStyle = isLatest ? 'background: rgba(102, 126, 234, 0.1);' : '';
-                        
+
                         // Determine result color based on success rate
                         let resultColor = '#888';  // gray for unknown
                         let resultBg = 'transparent';
@@ -1269,7 +1423,7 @@
                                 resultBg = 'rgba(245, 158, 11, 0.1)';
                             }
                         }
-                        
+
                         // Build result display
                         let resultText = total > 0 ? `${installed}/${total}` : '-';
                         let failedText = failed > 0 ? ` <span style="color: #ef4444; font-size: 0.75rem;">(${failed} failed)</span>` : '';
@@ -1330,7 +1484,7 @@
             const downloadBtn = document.getElementById('btn-download-selected');
             const selectAllCheckbox = document.getElementById('select-all-reports');
             const allCheckboxes = document.querySelectorAll('.report-checkbox');
-            
+
             if (selected.length > 0) {
                 countSpan.textContent = `${selected.length} selected`;
                 downloadBtn.style.display = 'inline-block';
@@ -1338,7 +1492,7 @@
                 countSpan.textContent = '';
                 downloadBtn.style.display = 'none';
             }
-            
+
             // Update "select all" checkbox state
             if (allCheckboxes.length > 0) {
                 selectAllCheckbox.checked = selected.length === allCheckboxes.length;
@@ -1352,13 +1506,13 @@
                 showAlert('No reports selected', 'error');
                 return;
             }
-            
+
             if (selected.length === 1) {
                 // Single report - use regular download
                 downloadReportCSV(selected[0].value);
                 return;
             }
-            
+
             // Multiple reports - use combined download
             const reports = Array.from(selected).map(cb => cb.value).join(',');
             showAlert(`Combining ${selected.length} reports into single CSV...`, 'success');
@@ -1464,12 +1618,12 @@
             const body = document.body;
             // Remove all theme classes
             body.classList.remove('theme-frost', 'theme-shadowman', 'theme-cardinal', 'theme-midnight', 'theme-parchment', 'theme-ocean');
-            
+
             // Add new theme class (nebula is default/root, no class needed)
             if (themeName !== 'nebula') {
                 body.classList.add(`theme-${themeName}`);
             }
-            
+
             // Save preference to localStorage
             localStorage.setItem('dashboard-theme', themeName);
         }

@@ -24,9 +24,17 @@ DASHBOARD_PORT = int(os.environ.get('DASHBOARD_PORT', '5001'))
 SSH_KEY_PATH = os.environ.get('SSH_KEY_PATH', '')  # Optional: path to SSH private key
 SSH_USER = os.environ.get('SSH_USER', '')  # Optional: SSH username
 
-# Catalog configuration from environment (JSON string) or defaults
-REDHAT_CATALOG_INDEX = os.environ.get('REDHAT_CATALOG_INDEX', 'registry.redhat.io/redhat/redhat-operator-index:v4.20')
-CERTIFIED_CATALOG_INDEX = os.environ.get('CERTIFIED_CATALOG_INDEX', 'registry.redhat.io/redhat/certified-operator-index:v4.20')
+# Catalog configuration - can be overridden by environment variables
+# If not set, will be auto-discovered from cluster
+REDHAT_CATALOG_INDEX = os.environ.get('REDHAT_CATALOG_INDEX', '')
+CERTIFIED_CATALOG_INDEX = os.environ.get('CERTIFIED_CATALOG_INDEX', '')
+
+# Default fallback indexes (used if env not set and cluster discovery fails)
+DEFAULT_REDHAT_INDEX = 'registry.redhat.io/redhat/redhat-operator-index:v4.21'
+DEFAULT_CERTIFIED_INDEX = 'registry.redhat.io/redhat/certified-operator-index:v4.21'
+
+# KUBECONFIG path for test execution
+KUBECONFIG_PATH = os.environ.get('KUBECONFIG_PATH', '~/.kcli/clusters/cluster1/auth/kubeconfig')
 
 # Demo mode - use mock data instead of SSH
 DEMO_MODE = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
@@ -260,6 +268,42 @@ def safe_int(value, default=0):
     except (ValueError, IndexError):
         return default
 
+def discover_catalog_indexes():
+    """Discover catalog index images from the cluster's catalogsources"""
+    redhat_index = REDHAT_CATALOG_INDEX
+    certified_index = CERTIFIED_CATALOG_INDEX
+    
+    # If env vars are set, use them
+    if redhat_index and certified_index:
+        logger.info(f"Using catalog indexes from environment: redhat={redhat_index}, certified={certified_index}")
+        return redhat_index, certified_index
+    
+    # Try to discover from cluster
+    try:
+        if not redhat_index:
+            discovered = ssh_command("oc get catalogsource redhat-operators -n openshift-marketplace -o jsonpath='{.spec.image}'").strip()
+            if discovered and 'registry.redhat.io' in discovered:
+                redhat_index = discovered
+                logger.info(f"Discovered Red Hat catalog index from cluster: {redhat_index}")
+            else:
+                redhat_index = DEFAULT_REDHAT_INDEX
+                logger.info(f"Using default Red Hat catalog index: {redhat_index}")
+        
+        if not certified_index:
+            discovered = ssh_command("oc get catalogsource certified-operators -n openshift-marketplace -o jsonpath='{.spec.image}'").strip()
+            if discovered and 'registry.redhat.io' in discovered:
+                certified_index = discovered
+                logger.info(f"Discovered Certified catalog index from cluster: {certified_index}")
+            else:
+                certified_index = DEFAULT_CERTIFIED_INDEX
+                logger.info(f"Using default Certified catalog index: {certified_index}")
+    except Exception as e:
+        logger.warning(f"Failed to discover catalog indexes: {e}")
+        redhat_index = redhat_index or DEFAULT_REDHAT_INDEX
+        certified_index = certified_index or DEFAULT_CERTIFIED_INDEX
+    
+    return redhat_index, certified_index
+
 @app.route('/')
 def index():
     return render_template('dashboard.html')
@@ -271,7 +315,7 @@ def get_status():
     if DEMO_MODE:
         return jsonify(get_demo_status())
     
-    # Check if test is running
+    # Check if test is running (tmux session exists = test running)
     is_running = ssh_command('tmux has-session -t operator-test 2>/dev/null && echo "true" || echo "false"').strip() == 'true'
     
     # Test progress tracking
@@ -394,6 +438,107 @@ def get_latest_results():
         'success_rate': success_rate
     })
 
+@app.route('/api/cluster/info')
+def get_cluster_info():
+    """Get comprehensive cluster information"""
+    if DEMO_MODE:
+        return jsonify({
+            'version': '4.21.0',
+            'status': 'demo',
+            'user': 'demo-user',
+            'api_url': 'https://api.demo-cluster.example.com:6443',
+            'redhat_catalog': DEFAULT_REDHAT_INDEX,
+            'certified_catalog': DEFAULT_CERTIFIED_INDEX,
+            'nodes': {'total': 3, 'ready': 3, 'not_ready': 0},
+            'catalog_sources': [
+                {'name': 'redhat-operators', 'status': 'READY'},
+                {'name': 'certified-operators', 'status': 'READY'},
+                {'name': 'community-operators', 'status': 'READY'}
+            ],
+            'installed_operators': [
+                {'namespace': 'openshift-logging', 'name': 'cluster-logging.v5.8.0', 'status': 'Succeeded'},
+                {'namespace': 'openshift-operators-redhat', 'name': 'elasticsearch-operator.v5.8.0', 'status': 'Succeeded'}
+            ],
+            'subscriptions': [
+                {'name': 'cluster-logging', 'namespace': 'openshift-logging'},
+                {'name': 'elasticsearch-operator', 'namespace': 'openshift-operators-redhat'}
+            ]
+        })
+    
+    try:
+        # Get cluster version
+        version = ssh_command("oc get clusterversion -o jsonpath='{.items[0].status.desired.version}'").strip()
+        
+        # Get API URL
+        api_url = ssh_command("oc whoami --show-server").strip()
+        
+        # Get current user
+        whoami = ssh_command("oc whoami").strip()
+        status = 'connected' if whoami else 'disconnected'
+        
+        # Get catalog indexes
+        redhat_index, certified_index = discover_catalog_indexes()
+        
+        # Get node status
+        nodes_total = safe_int(ssh_command("oc get nodes --no-headers 2>/dev/null | wc -l"))
+        nodes_ready = safe_int(ssh_command("oc get nodes --no-headers 2>/dev/null | grep ' Ready' | wc -l"))
+        
+        # Get catalog sources
+        catalog_raw = ssh_command("oc get catalogsource -n openshift-marketplace --no-headers 2>/dev/null")
+        catalog_sources = []
+        if catalog_raw:
+            for line in catalog_raw.strip().split('\n'):
+                if line:
+                    parts = line.split()
+                    if len(parts) >= 1:
+                        name = parts[0]
+                        status = parts[-1] if len(parts) > 1 else 'Unknown'
+                        catalog_sources.append({'name': name, 'status': status})
+        
+        # Get installed operators (CSVs) with details
+        csv_raw = ssh_command("oc get csv -A --no-headers 2>/dev/null | grep Succeeded")
+        installed_operators = []
+        if csv_raw:
+            for line in csv_raw.strip().split('\n'):
+                if line:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        installed_operators.append({
+                            'namespace': parts[0],
+                            'name': parts[1],
+                            'status': 'Succeeded'
+                        })
+        
+        # Get subscriptions
+        subs_raw = ssh_command("oc get subscriptions -A --no-headers 2>/dev/null")
+        subscriptions = []
+        if subs_raw:
+            for line in subs_raw.strip().split('\n')[:20]:  # Limit to 20
+                if line:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        subscriptions.append({'namespace': parts[0], 'name': parts[1]})
+        
+        return jsonify({
+            'version': version or 'unknown',
+            'status': status,
+            'user': whoami,
+            'api_url': api_url,
+            'redhat_catalog': redhat_index,
+            'certified_catalog': certified_index,
+            'nodes': {
+                'total': nodes_total,
+                'ready': nodes_ready,
+                'not_ready': nodes_total - nodes_ready
+            },
+            'catalog_sources': catalog_sources,
+            'installed_operators': installed_operators,
+            'subscriptions': subscriptions
+        })
+    except Exception as e:
+        logger.error(f"Cluster info error: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
 @app.route('/api/test/config')
 def get_test_config():
     """Get current test configuration"""
@@ -429,16 +574,23 @@ def get_test_config():
             "sriov-fec", "crunchy-postgres-operator","cloud-native-postgresql", "mongodb-enterprise", "vault-secrets-operator"
         ]
     
+    # Auto-discover catalog indexes from cluster (or use env vars/defaults)
+    if DEMO_MODE:
+        redhat_index = DEFAULT_REDHAT_INDEX
+        certified_index = DEFAULT_CERTIFIED_INDEX
+    else:
+        redhat_index, certified_index = discover_catalog_indexes()
+    
     return jsonify({
         'catalogs': [
             {
                 'name': 'Red Hat Operators',
-                'index': REDHAT_CATALOG_INDEX,
+                'index': redhat_index,
                 'operators': redhat_operators
             },
             {
                 'name': 'Certified Operators', 
-                'index': CERTIFIED_CATALOG_INDEX,
+                'index': certified_index,
                 'operators': certified_operators
             }
         ]
@@ -457,11 +609,17 @@ def start_test():
         logger.info("Demo mode: Simulated test start")
         return jsonify({'status': 'Test started (demo mode)', 'message': 'Demo test simulation started'})
     
-    # Check if already running
+    # Check if test is already running (tmux session exists)
     is_running = ssh_command('tmux has-session -t operator-test 2>/dev/null && echo "true" || echo "false"').strip() == 'true'
     if is_running:
         logger.warning("Test start rejected - test already running")
         return jsonify({'error': 'Test already running'}), 400
+    
+    # Run pre-test setup: disable default catalogs
+    disable_catalog_script = os.environ.get('DISABLE_CATALOG_SCRIPT', '/root/test-rose/kcli-platform/disable-catalog.sh')
+    logger.info(f"Running pre-test setup: {disable_catalog_script}")
+    disable_result = ssh_command(f'bash {disable_catalog_script} 2>&1')
+    logger.info(f"Disable catalog result: {disable_result[:200] if disable_result else 'OK'}")
     
     # Get custom configuration if provided
     data = request.get_json() or {}
@@ -484,13 +642,13 @@ def start_test():
 EOFSCRIPT
 chmod +x {REMOTE_BASE_DIR}/run-custom-test.sh'''
             ssh_command(create_script_cmd)
-            ssh_command(f'tmux new-session -d -s operator-test "cd {REMOTE_BASE_DIR} && ./run-custom-test.sh"')
+            ssh_command(f'tmux new-session -d -s operator-test "export KUBECONFIG={KUBECONFIG_PATH} && cd {REMOTE_BASE_DIR} && ./run-custom-test.sh"')
             logger.info(f"Custom test started with {len(commands) - 2} catalog(s)")
         else:
             return jsonify({'error': 'No operators specified'}), 400
     else:
         # Use default test script
-        ssh_command(f'tmux new-session -d -s operator-test "cd {REMOTE_BASE_DIR} && ./run-ocp-4.20-test-v2.sh"')
+        ssh_command(f'tmux new-session -d -s operator-test "export KUBECONFIG={KUBECONFIG_PATH} && cd {REMOTE_BASE_DIR} && ./run-ocp-4.20-test-v2.sh"')
         logger.info("Default test started")
     
     return jsonify({'status': 'Test started', 'timestamp': datetime.now().isoformat()})
@@ -505,8 +663,9 @@ def stop_test():
         logger.info("Demo mode: Simulated test stop")
         return jsonify({'status': 'Test stopped (demo mode)'})
     
+    # Kill the tmux session to stop the test
     ssh_command('tmux kill-session -t operator-test 2>/dev/null')
-    logger.info("Test stopped")
+    logger.info("Test stopped (killed tmux session)")
     return jsonify({'status': 'Test stopped'})
 
 @app.route('/api/cleanup', methods=['POST'])

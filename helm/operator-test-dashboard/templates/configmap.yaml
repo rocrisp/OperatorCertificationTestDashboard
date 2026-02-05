@@ -9,6 +9,8 @@ data:
   REMOTE_HOST: {{ .Values.config.remoteHost | quote }}
   REMOTE_BASE_DIR: {{ .Values.config.remoteBaseDir | quote }}
   REPORT_DIR: {{ .Values.config.reportDir | quote }}
+  DISABLE_CATALOG_SCRIPT: {{ .Values.config.disableCatalogScript | quote }}
+  KUBECONFIG_PATH: {{ .Values.config.kubeconfigPath | quote }}
   DASHBOARD_PORT: {{ .Values.config.port | quote }}
   DEBUG: {{ .Values.config.debug | quote }}
   LOG_DIR: "/app/logs"

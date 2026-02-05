@@ -103,20 +103,26 @@ config:
   # Directory where test reports are stored
   reportDir: "/var/www/html"
 
+  # Script to disable default catalogs before running tests
+  disableCatalogScript: "/root/test-rose/kcli-platform/disable-catalog.sh"
+  
+  # KUBECONFIG path on the remote host
+  kubeconfigPath: "~/.kcli/clusters/cluster1/auth/kubeconfig"
+
   # Dashboard port
   port: 5001
 
   # Enable debug mode
   debug: false
 
-  # Catalog indexes
+  # Catalog indexes (leave empty to auto-discover from cluster)
   catalogs:
     redhat:
-      index: "registry.redhat.io/redhat/redhat-operator-index:v4.20"
+      index: "" # Auto-discovered from cluster catalogsource
       # Comma-separated list of operators (leave empty for defaults)
       operators: ""
     certified:
-      index: "registry.redhat.io/redhat/certified-operator-index:v4.20"
+      index: "" # Auto-discovered from cluster catalogsource
       # Comma-separated list of operators (leave empty for defaults)
       operators: ""
 
